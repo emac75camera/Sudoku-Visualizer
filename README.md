@@ -1,6 +1,6 @@
 # Sudoku Visualizer
 
-**Version 1.3** is a dependency-free browser app for watching a Sudoku strategy calculate its next scan in real time. It is designed around a particular sequential scanning method rather than a conventional all-purpose Sudoku solver.
+**Version 1.4** is a dependency-free browser app for watching a Sudoku strategy calculate its next scan in real time. It is designed around a particular sequential scanning method rather than a conventional all-purpose Sudoku solver.
 
 ## Run it as a website
 
@@ -16,14 +16,17 @@ To publish it with GitHub Pages:
 
 You can also open `index.html` directly in a modern browser.
 
-## Version 1.3 features
+## Version 1.4 features
 
 - Interactive 9×9 Sudoku board with manual cell entry.
 - Import a puzzle by pasting an 81-character string. Use digits 1–9 for filled cells and `0` or `.` for blanks. Whitespace, commas, semicolons, and vertical bars are ignored.
 - Basic input validation rejects duplicate digits in a row, column, or 3×3 box.
 - Optional candidate overlay shows legal digits for each empty cell. It is **display-only** and does not influence solver decisions.
 - Live scan processing: the next unit is examined only when the user presses Step or the playback timer advances.
-- Every unit check is visible, including checks with zero legal locations.
+- Cell-by-cell reasoning: every inspected cell is marked as still possible or eliminated.
+- Explicit elimination explanations identify the row, column, and/or 3×3 box that rules out a cell.
+- Unit conclusions explain whether zero, multiple, or exactly one legal position remains.
+- A forced hidden single is shown as a separate deduction before the number is placed.
 - A running event count, scan count, placement count, and filled-cell count. There is deliberately no total-step estimate because future processing has not happened yet.
 - Previous-step navigation backed by recorded state snapshots.
 - Clear stopping states for completion, scan-method dead ends, and detected contradictions.
@@ -47,17 +50,17 @@ This is a single-digit hidden-single scan. It does not use pencil marks, candida
 
 Version 1.2 built a complete array of scan and placement events before playback began. The interface then replayed that precomputed list. That made the animation look live, but the solving work had already happened and the total event count was known in advance.
 
-Version 1.3 changes that architecture:
+Version 1.3 changed that architecture. Version 1.4 adds cell-by-cell explanations:
 
 - The solver stores its current board and scan position: active digit, unit type, and unit number.
-- A Step action evaluates exactly the next unit using the current board.
-- It records and displays that result immediately. No later unit is evaluated until the next Step or timer tick.
+- A Step action evaluates exactly the next cell in the current unit, or presents the unit conclusion once all nine cells have been inspected.
+- It records and displays the cell decision immediately. No later cell is evaluated until the next Step or timer tick.
 - If a placement is found, the board changes immediately and the scan cursor resets to row 1 of the *same digit*. The solver advances to the next digit only after checking all rows, columns, and boxes for the current digit without finding another placement.
 - If the scan reaches the end of digit 9 without a placement, it stops and reports that this particular method is stuck.
 - The event history stores state snapshots so Previous can restore the exact earlier board and scan position. New processing after going backward replaces the abandoned future history.
 - The counter is labelled **Processed events** and counts events that have actually occurred. It does not display a total or predicted number of future steps.
 
-A unit check with exactly one legal cell is represented as a placement event: the number is placed as part of that live operation. The solver then continues with that same digit, rather than restarting at digit 1. Checks with zero, two, or more legal cells are all displayed as scan events.
+A unit with exactly one legal cell first produces a deduction event explaining why that cell is the only remaining possibility. The following event places the digit. Units with zero or multiple legal cells produce a conclusion explaining why no placement can be made.
 
 ## Understanding the stopping messages
 
@@ -166,3 +169,10 @@ Recommended engineering steps:
 - `styles.css`: responsive visual design and live scan indicator.
 - `app.js`: board interaction, puzzle validation, live scan state machine, event history, and candidate display.
 - `README.md`: current behavior, algorithm explanation, implementation notes, and roadmap.
+
+
+## Version 1.4 reasoning model
+
+The solver now separates a unit scan into individual cell inspections. For each cell, it records whether the active digit is legal and every applicable reason it is eliminated: the cell is occupied, its row contains the active digit, its column contains the active digit, or its 3×3 box contains the active digit. The board marks inspected cells, remaining legal positions, and the current cell. Once all nine cells in a unit have been inspected, a separate conclusion event explains the result. If exactly one legal location remains, the solver presents a hidden-single deduction; the following event places the digit. Event snapshots include the inspection trace so Previous restores the explanation as well as the board.
+
+This is the first teaching layer, not yet a complete human-style Sudoku solver. It explains the existing single-digit hidden-single scan.
