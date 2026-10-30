@@ -84,7 +84,7 @@
             const present=state.grid.flat().filter(v=>v===d).length;
             if(present<9 && !state.grid.some((row,r)=>row.some((v,c)=>v===0&&legal(state.grid,r,c,d)))) missing.push(d);
           }
-          if(missing.length) finish("contradiction",`Contradiction detected: digit${missing.length>1?"s":""} ${missing.join(", ")} still need placement(s), but no empty cell can legally contain ${missing.length>1?"them":"it"}. The current board cannot be completed under Sudoku rules.`);
+          if(missing.length) { state.digit=9; finish("contradiction",`Contradiction detected: digit${missing.length>1?"s":""} ${missing.join(", ")} still need placement(s), but no empty cell can legally contain ${missing.length>1?"them":"it"}. The current board cannot be completed under Sudoku rules.`);
           else finish("stuck","A complete pass through digits 1–9 found no forced placement. The scan method is stuck, but this alone does not prove the puzzle is unsolvable.");
         }
       }
@@ -156,7 +156,7 @@
 
   $("candidateToggle").addEventListener("change",e=>{showCandidates=e.target.checked;render();});
   $("importBtn").addEventListener("click",()=>{
-    const compact=$("puzzleString").value.trim().replace(/[\\s,;|]+/g,""),status=$("importStatus");
+    const compact=$("puzzleString").value.trim().replace(/[\s,;|]+/g,""),status=$("importStatus");
     if(!/^[0-9.]{81}$/.test(compact)){status.textContent="Expected exactly 81 digits, dots, or zeros. Found "+compact.length+" characters.";status.className="import-status error";return;}
     const grid=Array.from({length:9},(_,r)=>Array.from({length:9},(_,c)=>{const ch=compact[r*9+c];return ch==="."||ch==="0"?0:Number(ch);}));
     if(!validPuzzle(clone(grid))){status.textContent="This puzzle has a duplicate in a row, column, or 3×3 box.";status.className="import-status error";return;}
