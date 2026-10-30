@@ -118,14 +118,15 @@
       advanceUnit();saveState();return true;
     }
     if(!showScanAnimation){
-      const trace=[];
-      for(const [r,c] of cellsFor(type,unit)){
-        const result=explainCell(state.grid,r,c,state.digit);
+      const trace=state.inspected.map(x=>({...x,reasons:x.reasons.slice()}));
+      const unitCells=cellsFor(type,unit);
+      for(let i=state.cellIndex;i<9;i++){
+        const [r,c]=unitCells[i],result=explainCell(state.grid,r,c,state.digit);
         trace.push({r,c,legal:result.legal,reasons:result.reasons});
         state.liveCandidates[r+","+c]=state.grid[r][c]===0?candidatesFor(state.grid,r,c):[];
       }
       const options=trace.filter(x=>x.legal).map(x=>[x.r,x.c]);
-      state.scans+=9;
+      state.scans+=9-state.cellIndex;
       if(options.length===1){
         const currentDigit=state.digit;
         state.pendingPlacement={r:options[0][0],c:options[0][1],digit:state.digit,typeIndex:state.typeIndex,unit:state.unit};
@@ -251,6 +252,13 @@
       }
     }
     state.grid=candidate;state.filled=countFilled(candidate);
+    if(!wasFinished&&!state.pendingPlacement&&state.typeIndex<3){
+      state.inspected=state.inspected.map(item=>{
+        const result=explainCell(state.grid,item.r,item.c,state.digit);
+        return {r:item.r,c:item.c,legal:result.legal,reasons:result.reasons};
+      });
+      state.legalPositions=state.inspected.filter(item=>item.legal).map(item=>[item.r,item.c]);
+    }
     if(wasFinished){state.digit=1;state.typeIndex=0;state.unit=0;state.cellIndex=0;state.inspected=[];state.legalPositions=[];state.pendingPlacement=null;state.status="ready";}
     for(let rr=0;rr<9;rr++)for(let cc=0;cc<9;cc++)if(rr===r||cc===c||boxIndex(rr,cc)===boxIndex(r,c))delete state.liveCandidates[rr+","+cc];
     state.event={kind:"manual-edit",digit:state.digit,type:null,unit:null,cell:[r,c],reasons:[],inspected:[],candidates:[],contextCells:[],sourceCells:[],placement:null,message:"Manual edit: "+(value?"entered "+value:"cleared")+" at row "+(r+1)+", column "+(c+1)+". The board and candidate cache were updated without resetting the active scan position."+(wasFinished?" The previous scan had stopped, so a fresh digit cycle is starting from 1.":"")};
