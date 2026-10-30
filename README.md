@@ -23,7 +23,7 @@ You can also open `index.html` directly in a modern browser.
 - Basic input validation rejects duplicate digits in a row, column, or 3×3 box.
 - Optional live candidate overlay calculates candidate digits only when the scanner reaches each cell. Candidate lists are refreshed when a placement changes that cell's row, column, or box.
 - Live scan processing: the next cell is examined only when the user presses Next or the playback timer advances.
-- The active digit completes its current rows → columns → boxes cycle after a placement. The solver does not restart that digit's cycle or repeat units already checked.
+- The active digit completes its current rows → columns → boxes cycle after a placement. The solver does not restart that digit's cycle or repeat units already checked. After digit 9, it starts another complete 1–9 pass only if the previous full pass made progress.
 - The current cell is highlighted blue; the row/column/box being cross-referenced is highlighted blue, and existing matching digits that eliminate a candidate are highlighted green.
 - Playback speed ranges from 1× to 10×.
 - Cell-by-cell reasoning: every inspected cell is marked as still possible or eliminated.
@@ -45,7 +45,7 @@ The visualizer follows this sequence:
 5. In each unit, identify empty cells where the active digit is legal. A legal cell must not already have that digit in its row, column, or box.
 6. If exactly one legal location remains, present the hidden-single deduction as its own event, then place the digit in the following event.
 7. After a placement, continue with the next unit in the current digit's existing cycle. Do not restart the cycle or repeat units already checked.
-8. Once the current digit has completed its rows, columns, and boxes, advance to the next digit.
+8. Once the current digit has completed its rows, columns, and boxes, advance to the next digit. After digit 9, begin another complete 1–9 pass only if the preceding full pass made at least one placement. Never restart a digit or repeat earlier units immediately after an individual placement.
 9. If a complete pass through digits 1–9 produces no placement, report **Scan method stuck**.
 
 This is a single-digit hidden-single scan. It does not use pencil marks, candidate notation, pairs, X-Wing, guessing, or backtracking to decide placements. The candidate overlay is a separate visual aid only.
@@ -59,7 +59,7 @@ Version 1.3 changed that architecture. Version 1.4 adds cell-by-cell explanation
 - The solver stores its current board and scan position: active digit, unit type, unit number, cell position, live candidate cache, and the current unit's inspection trace.
 - A Step action evaluates exactly the next cell in the current unit, or presents the unit conclusion once all nine cells have been inspected.
 - It records and displays the cell decision immediately. No later cell is evaluated until the next Step or timer tick.
-- If a placement is found, the deduction and placement are separate events. The scan cursor has already advanced to the next unit, so after placement the solver continues the current digit's cycle without rescanning earlier units. It advances to the next digit after the current digit's rows, columns, and boxes have been completed.
+- If a placement is found, the deduction and placement are separate events. The scan cursor has already advanced to the next unit, so after placement the solver continues the current digit's cycle without rescanning earlier units. It advances to the next digit after the current digit's rows, columns, and boxes have been completed. After digit 9, it starts another full 1–9 pass only if the previous full pass made at least one placement; if a full pass makes no placements, it reports stuck.
 - If the scan reaches the end of digit 9 without a placement, it stops and reports that this particular method is stuck.
 - The event history stores state snapshots so Previous can restore the exact earlier board and scan position. New processing after going backward replaces the abandoned future history.
 - The counter is labelled **Processed events** and counts events that have actually occurred. It does not display a total or predicted number of future steps.
