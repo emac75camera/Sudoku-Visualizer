@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#10151f">
+  <title>Sudoku Visualizer</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <main class="app-shell">
+    <header class="topbar">
+      <div class="brand-mark" aria-hidden="true">▦</div>
+      <div><p class="eyebrow">ALGORITHM PLAYGROUND</p><h1>Sudoku Visualizer</h1></div>
+      <span class="version">MVP · v0.1</span>
+    </header>
+
+    <section class="intro">
+      <div>
+        <p class="eyebrow">WATCH THE LOGIC UNFOLD</p>
+        <h2>One digit at a time.</h2>
+        <p class="subhead">A visual walkthrough of your scan-based solving method. No candidate notation required.</p>
+      </div>
+      <div class="mode-pill"><span class="pulse"></span> Sequential scan mode</div>
+    </section>
+
+    <section class="workspace">
+      <div class="board-panel panel">
+        <div class="panel-heading">
+          <div><p class="eyebrow">PUZZLE BOARD</p><h3>Live grid</h3></div>
+          <div class="board-legend"><span><i class="legend-given"></i> Given</span><span><i class="legend-found"></i> Solved</span><span><i class="legend-focus"></i> Scanning</span></div>
+        </div>
+        <div id="board" class="sudoku-board" role="grid" aria-label="Sudoku puzzle"></div>
+        <div class="board-actions">
+          <button id="sampleBtn" class="button secondary">Load example</button>
+          <button id="clearBtn" class="button secondary">Clear board</button>
+          <button id="resetBtn" class="button secondary">Reset puzzle</button>
+        </div>
+        <p class="helper">Select a cell and type 1–9. Use Backspace or Delete to erase. The example puzzle is preloaded.</p>
+      </div>
+
+      <aside class="side-column">
+        <section class="panel focus-panel">
+          <p class="eyebrow">CURRENT FOCUS</p>
+          <div class="focus-number" id="focusNumber">1</div>
+          <h3 id="focusTitle">Ready to scan</h3>
+          <p id="focusDescription" class="muted">Press Play or Step to begin checking where this digit can go.</p>
+          <div class="scan-track"><div id="scanProgress" class="scan-progress"></div></div>
+          <div class="scan-meta"><span id="scanUnit">Waiting for first scan</span><span id="stepCount">Step 0</span></div>
+        </section>
+
+        <section class="panel controls-panel">
+          <div class="panel-heading compact"><div><p class="eyebrow">PLAYBACK</p><h3>Solver controls</h3></div></div>
+          <div class="main-controls">
+            <button id="playBtn" class="button primary"><span id="playIcon">▶</span> <span id="playText">Play</span></button>
+            <button id="stepBtn" class="button secondary">Step →</button>
+            <button id="backBtn" class="button secondary" aria-label="Previous step">←</button>
+          </div>
+          <div class="speed-row"><label for="speed">Playback speed</label><strong id="speedValue">1×</strong></div>
+          <input id="speed" type="range" min="1" max="5" value="1">
+          <div class="speed-labels"><span>Slow</span><span>Fast</span></div>
+        </section>
+
+        <section class="panel reasoning-panel">
+          <div class="panel-heading compact"><div><p class="eyebrow">SOLVER NOTEBOOK</p><h3>What it's doing</h3></div><span class="live-dot"></span></div>
+          <div id="reasoning" class="reasoning" aria-live="polite">The solver will explain each scan and placement here.</div>
+          <div class="stats-grid">
+            <div><strong id="placements">0</strong><span>Placements</span></div>
+            <div><strong id="scans">0</strong><span>Scans</span></div>
+            <div><strong id="filled">30</strong><span>Filled cells</span></div>
+          </div>
+        </section>
+      </aside>
+    </section>
+    <footer><span>Built to make the solving process visible.</span><span>More techniques coming later.</span></footer>
+  </main>
+  <script src="app.js"></script>
+</body>
+</html>
