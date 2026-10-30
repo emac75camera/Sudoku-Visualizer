@@ -12,7 +12,7 @@
     <header class="topbar">
       <div class="brand-mark" aria-hidden="true">▦</div>
       <div><p class="eyebrow">ALGORITHM PLAYGROUND</p><h1>Sudoku Visualizer</h1></div>
-      <span class="version">MVP · v0.1</span>
+      <span class="version">RELEASE · v1.2</span>
     </header>
 
     <section class="intro">
@@ -36,7 +36,13 @@
           <button id="clearBtn" class="button secondary">Clear board</button>
           <button id="resetBtn" class="button secondary">Reset puzzle</button>
         </div>
-        <p class="helper">Select a cell and type 1–9. Use Backspace or Delete to erase. The example puzzle is preloaded.</p>
+        <div class="input-tools">
+          <label class="toggle-label"><input id="candidateToggle" type="checkbox"> Show candidates <span class="muted-inline">(display only)</span></label>
+          <label for="puzzleString" class="input-label">Import puzzle string</label>
+          <textarea id="puzzleString" rows="2" placeholder="Paste 81 characters: use 0 or . for empty cells"></textarea>
+          <div class="import-row"><button id="importBtn" class="button secondary">Import 81-cell puzzle</button><span id="importStatus" class="import-status" aria-live="polite">Enter a puzzle string to import.</span></div>
+        </div>
+        <p class="helper">Select a cell and type 1–9. Use Backspace or Delete to erase. The example puzzle is preloaded. Candidate display never changes the solver's decisions.</p>
       </div>
 
       <aside class="side-column">
