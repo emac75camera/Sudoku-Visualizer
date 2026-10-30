@@ -199,7 +199,7 @@
       cell.addEventListener("click",()=>{selectedCell=[r,c];render();});
       boardEl.appendChild(cell);
     }
-    $("focusNumber").textContent=s.digit||"—";
+    $("focusNumber").textContent=showScanAnimation?(s.digit||"—"):"—";
     $("progressText").textContent=state.filled+" / 81";
     $("progressFill").style.width=(state.filled/81*100)+"%";
     $("progressPercent").textContent=Math.round(state.filled/81*100)+"%";
