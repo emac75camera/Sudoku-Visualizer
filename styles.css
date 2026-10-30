@@ -35,6 +35,6 @@
 .cell.scan-context{background:#254a70!important;color:#dceeff!important}
 .cell.current-cell.conflict-source,.cell.current-cell.inspected-legal{background:#244b3d!important;color:var(--green)!important;outline-color:#76d6ad!important}
 .cell.current-cell.inspected-eliminated{background:#59313a!important;color:#ffd5d8!important;outline-color:#e69aa2!important}
-body.hide-blue .cell.current-cell,body.hide-blue .cell.scan-context{background:transparent!important;outline:none!important;box-shadow:none!important}
+body.hide-blue .cell.current-cell:not(.conflict-source):not(.inspected-eliminated):not(.inspected-legal),body.hide-blue .cell.scan-context:not(.conflict-source):not(.inspected-eliminated):not(.inspected-legal),body.hide-blue .cell.related:not(.conflict-source):not(.inspected-eliminated):not(.inspected-legal){background:transparent!important;outline:none!important;box-shadow:none!important}
 body.hide-red .cell.inspected-eliminated{background:transparent!important;color:inherit!important}
 body.hide-green .cell.inspected-legal,body.hide-green .cell.conflict-source{background:transparent!important;color:inherit!important;box-shadow:none!important}
