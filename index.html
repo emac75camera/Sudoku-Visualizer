@@ -12,7 +12,7 @@
     <header class="topbar">
       <div class="brand-mark" aria-hidden="true">▦</div>
       <div><p class="eyebrow">ALGORITHM PLAYGROUND</p><h1>Sudoku Visualizer</h1></div>
-      <span class="version">RELEASE · v1.5</span>
+      <span class="version">RELEASE · v1.6</span>
     </header>
 
     <section class="intro">
@@ -38,6 +38,8 @@
         </div>
         <div class="input-tools">
           <label class="toggle-label"><input id="candidateToggle" type="checkbox"> Show live candidates <span class="muted-inline">(updated as cells are scanned)</span></label>
+          <label class="toggle-label"><input id="scanVisualToggle" type="checkbox" checked> Show cell-by-cell scan animation</label>
+          <div class="display-settings"><strong>Highlight colors</strong><label><input id="colorBlue" type="checkbox" checked> Blue</label><label><input id="colorRed" type="checkbox" checked> Red</label><label><input id="colorGreen" type="checkbox" checked> Green</label></div>
           <label for="puzzleString" class="input-label">Import puzzle string</label>
           <textarea id="puzzleString" rows="2" placeholder="Paste 81 characters: use 0 or . for empty cells"></textarea>
           <div class="import-row"><button id="importBtn" class="button secondary">Import 81-cell puzzle</button><span id="importStatus" class="import-status" aria-live="polite">Enter a puzzle string to import.</span></div>
@@ -51,8 +53,10 @@
           <div class="focus-number" id="focusNumber">1</div>
           <h3 id="focusTitle">Ready to scan</h3>
           <p id="focusDescription" class="muted">Press Play or Step to begin checking where this digit can go.</p>
-          <div class="scan-track" aria-label="Live scan activity"><div id="scanProgress" class="scan-progress"></div></div>
-          <div class="scan-meta"><span id="scanUnit">Waiting for first scan</span><span id="stepCount">Processed events: 0</span></div>
+          <div class="progress-heading"><strong>Board progress</strong><strong id="progressText">30 / 81</strong></div>
+          <div class="board-progress" role="progressbar" aria-label="Filled Sudoku cells" aria-valuemin="0" aria-valuemax="81" aria-valuenow="30"><div id="progressFill" class="board-progress-fill"></div></div>
+          <div class="scan-meta"><span id="progressPercent">37%</span><span id="scanUnit">Waiting for first scan</span></div>
+          <div class="scan-meta"><span id="stepCount">Processed events: 0</span></div>
         </section>
 
         <section class="panel controls-panel">
