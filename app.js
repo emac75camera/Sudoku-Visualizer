@@ -68,9 +68,9 @@
     if(open.length===1) {
       const [r,c]=open[0];
       state.grid[r][c]=digit; state.filled++; state.placements++;
-      state.digit=1; state.typeIndex=0; state.unit=0;
+      state.digit=digit; state.typeIndex=0; state.unit=0;
       state.event={kind:"place",digit,type,unit,candidates:open,placement:[r,c],
-        message:`Live scan: ${unitLabel} has exactly one legal location for ${digit}. Place ${digit} at row ${r+1}, column ${c+1}. Restart at digit 1.`};
+        message:`Live scan: ${unitLabel} has exactly one legal location for ${digit}. Place ${digit} at row ${r+1}, column ${c+1}. Restart the scan for digit ${digit}; move to the next digit only after this digit has no more forced placements.`};
     } else {
       state.event={kind:"scan",digit,type,unit,candidates:open,placement:null,
         message:`Checked digit ${digit} in ${unitLabel}: ${open.length} legal ${open.length===1?"location":"locations"}. ${open.length===0?"This unit has no available location for this digit.":"No placement is forced by this unit."}`};
