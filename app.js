@@ -84,7 +84,7 @@
             const present=state.grid.flat().filter(v=>v===d).length;
             if(present<9 && !state.grid.some((row,r)=>row.some((v,c)=>v===0&&legal(state.grid,r,c,d)))) missing.push(d);
           }
-          if(missing.length) { state.digit=9; finish("contradiction",`Contradiction detected: digit${missing.length>1?"s":""} ${missing.join(", ")} still need placement(s), but no empty cell can legally contain ${missing.length>1?"them":"it"}. The current board cannot be completed under Sudoku rules.`);
+          if(missing.length) { state.digit=9; finish("contradiction",`Contradiction detected: digit${missing.length>1?"s":""} ${missing.join(", ")} still need placement(s), but no empty cell can legally contain ${missing.length>1?"them":"it"}. The current board cannot be completed under Sudoku rules.`); }
           else { state.digit=9; finish("stuck","A complete pass through digits 1–9 found no forced placement. The scan method is stuck, but this alone does not prove the puzzle is unsolvable."); }
         }
       }
