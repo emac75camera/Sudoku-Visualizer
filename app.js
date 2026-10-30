@@ -46,7 +46,7 @@
     return true;
   }
   function initialState(grid) {
-    return {grid:clone(grid),digit:1,typeIndex:0,unit:0,cellIndex:0,inspected:[],legalPositions:[],pendingPlacement:null,scans:0,placements:0,filled:countFilled(grid),status:"ready",event:{kind:"intro",digit:1,type:null,unit:null,candidates:[],inspected:[],cell:null,reasons:[],placement:null,message:"Ready. The solver will inspect one cell at a time and explain each decision."}};
+    return {grid:clone(grid),digit:1,typeIndex:0,unit:0,cellIndex:0,inspected:[],legalPositions:[],liveCandidates:{},pendingPlacement:null,scans:0,placements:0,filled:countFilled(grid),status:"ready",event:{kind:"intro",digit:1,type:null,unit:null,candidates:[],inspected:[],cell:null,reasons:[],contextCells:[],sourceCells:[],placement:null,message:"Ready. The solver will inspect one cell at a time and explain each decision."}};
   }
   function saveState() { history=history.slice(0,stepIndex+1); history.push(cloneState(state)); stepIndex=history.length-1; }
   function finish(kind,message) {
@@ -64,35 +64,80 @@
     return {legal:reasons.length===0,reasons};
   }
   function resetUnitTrace(){state.cellIndex=0;state.inspected=[];state.legalPositions=[];}
+  function finishCycle(){
+    const missing=[];
+    for(let d=1;d<=9;d++){
+      let count=0,possible=false;
+      for(let r=0;r<9;r++)for(let col=0;col<9;col++){
+        if(state.grid[r][col]===d)count++;
+        if(state.grid[r][col]===0&&legal(state.grid,r,col,d))possible=true;
+      }
+      if(count<9&&!possible)missing.push(d);
+    }
+    if(missing.length)finish("contradiction","Contradiction detected: digit(s) "+missing.join(", ")+" still need placement(s), but no empty cell can legally contain them.");
+    else finish("stuck","A complete pass through digits 1–9 found no forced placement. This scan method is stuck, but the puzzle may still be solvable with another technique.");
+  }
   function advanceUnit(){
     resetUnitTrace();state.unit++;
     if(state.unit===9){state.unit=0;state.typeIndex++;}
     if(state.typeIndex===3){state.typeIndex=0;state.digit++;}
-    if(state.digit===10){
-      const missing=[];
-      for(let d=1;d<=9;d++){let count=0,possible=false;for(let r=0;r<9;r++)for(let c=0;c<9;c++){if(state.grid[r][c]===d)count++;if(state.grid[r][c]===0&&legal(state.grid,r,c,d))possible=true;}if(count<9&&!possible)missing.push(d);}
-      if(missing.length){state.digit=9;finish("contradiction","Contradiction detected: digit(s) "+missing.join(", ")+" still need placement(s), but no empty cell can legally contain them.");}
-      else{state.digit=9;finish("stuck","A complete pass through digits 1–9 found no forced placement. This scan method is stuck, but the puzzle may still be solvable with another technique.");}
+    if(state.digit===10)finishCycle();
+  }
+  function contextForCell(r,c,type){
+    const cells=new Set();
+    for(let i=0;i<9;i++){
+      if(type!=="row")cells.add(r*9+i);
+      if(type!=="column")cells.add(i*9+c);
     }
+    const br=Math.floor(r/3)*3,bc=Math.floor(c/3)*3;
+    if(type!=="box")for(let rr=br;rr<br+3;rr++)for(let cc=bc;cc<bc+3;cc++)cells.add(rr*9+cc);
+    cells.delete(r*9+c);
+    return Array.from(cells).map(i=>[Math.floor(i/9),i%9]);
+  }
+  function sourceCellsFor(grid,r,c,digit,reasons){
+    const found=new Set();
+    if(reasons.some(x=>x.startsWith("Row ")))for(let cc=0;cc<9;cc++)if(grid[r][cc]===digit)found.add(r*9+cc);
+    if(reasons.some(x=>x.startsWith("Column ")))for(let rr=0;rr<9;rr++)if(grid[rr][c]===digit)found.add(rr*9+c);
+    if(reasons.some(x=>x.startsWith("The 3×3 box")))for(const [rr,cc] of cellsFor("box",boxIndex(r,c)))if(grid[rr][cc]===digit)found.add(rr*9+cc);
+    return Array.from(found).map(i=>[Math.floor(i/9),i%9]);
   }
   function advance(){
     if(["complete","stuck","contradiction"].includes(state.status))return false;
-    if(state.filled===81){finish("complete","Puzzle complete. The solver made "+state.placements+" placements after "+state.scans+" cell inspections.");saveState();return true;}
     if(state.pendingPlacement){
-      const r=state.pendingPlacement[0],c=state.pendingPlacement[1],d=state.digit;
-      state.grid[r][c]=d;state.filled++;state.placements++;state.pendingPlacement=null;state.typeIndex=0;state.unit=0;resetUnitTrace();
-      state.event={kind:"place",digit:d,type:null,unit:null,cell:[r,c],reasons:[],inspected:[],candidates:[],placement:[r,c],message:"Place "+d+" at row "+(r+1)+", column "+(c+1)+". Restart the scan for the same digit."};saveState();return true;
+      const {r,c,digit}=state.pendingPlacement;
+      state.grid[r][c]=digit;state.filled++;state.placements++;state.pendingPlacement=null;
+      for(let rr=0;rr<9;rr++)for(let cc=0;cc<9;cc++)if(rr===r||cc===c||boxIndex(rr,cc)===boxIndex(r,c))delete state.liveCandidates[rr+","+cc];
+      state.event={kind:"place",digit,type:null,unit:null,cell:[r,c],reasons:[],inspected:[],candidates:[],contextCells:[],sourceCells:[],placement:[r,c],message:"Place "+digit+" at row "+(r+1)+", column "+(c+1)+". Continue the remaining units in this digit's current scan cycle; do not restart the cycle."};
+      if(state.digit===10)finishCycle();
+      saveState();return true;
     }
+    if(state.filled===81){finish("complete","Puzzle complete. The solver made "+state.placements+" placements after "+state.scans+" cell inspections.");saveState();return true;}
     const type=TYPES[state.typeIndex],unit=state.unit,label=unitName(type,unit);
     if(state.cellIndex<9){
-      const pos=cellsFor(type,unit)[state.cellIndex],r=pos[0],c=pos[1],result=explainCell(state.grid,r,c,state.digit);
-      const item={r,c,legal:result.legal,reasons:result.reasons};state.inspected.push(item);if(result.legal)state.legalPositions.push([r,c]);
+      const [r,c]=cellsFor(type,unit)[state.cellIndex],result=explainCell(state.grid,r,c,state.digit);
+      const key=r+","+c;
+      state.liveCandidates[key]=state.grid[r][c]===0?candidatesFor(state.grid,r,c):[];
+      const item={r,c,legal:result.legal,reasons:result.reasons};
+      state.inspected.push(item);if(result.legal)state.legalPositions.push([r,c]);
       state.cellIndex++;state.scans++;
-      state.event={kind:"inspect",digit:state.digit,type,unit,cell:[r,c],legal:result.legal,reasons:result.reasons,inspected:state.inspected.map(x=>({...x,reasons:x.reasons.slice()})),candidates:state.legalPositions.map(x=>x.slice()),placement:null,message:"Inspect row "+(r+1)+", column "+(c+1)+" for "+state.digit+": "+(result.legal?"still possible.":"eliminated.")};saveState();return true;
+      const occupied=state.grid[r][c]!==0;
+      const sources=sourceCellsFor(state.grid,r,c,state.digit,result.reasons);
+      const context=result.legal?contextForCell(r,c,type):[];
+      let message;
+      if(occupied)message="Cell row "+(r+1)+", column "+(c+1)+" is occupied by "+state.grid[r][c]+". Record the existing number and continue.";
+      else if(result.legal)message="Row "+(r+1)+", column "+(c+1)+" remains a legal location for "+state.digit+". Check its intersecting row, column, and box.";
+      else message="Eliminate row "+(r+1)+", column "+(c+1)+" for "+state.digit+": "+result.reasons.join(" ");
+      state.event={kind:"inspect",digit:state.digit,type,unit,cell:[r,c],legal:result.legal,reasons:result.reasons,inspected:state.inspected.map(x=>({...x,reasons:x.reasons.slice()})),candidates:state.legalPositions.map(x=>x.slice()),contextCells:context,sourceCells:sources,placement:null,message};
+      saveState();return true;
     }
     const options=state.legalPositions.map(x=>x.slice());
-    if(options.length===1){state.pendingPlacement=options[0].slice();state.event={kind:"conclusion",digit:state.digit,type,unit,cell:null,reasons:[],inspected:state.inspected.map(x=>({...x,reasons:x.reasons.slice()})),candidates:options,placement:options[0],message:"Conclusion: after checking all nine cells in "+label+", exactly one legal location remains: row "+(options[0][0]+1)+", column "+(options[0][1]+1)+". This is a hidden single."};}
-    else{state.event={kind:"unit-result",digit:state.digit,type,unit,cell:null,reasons:[],inspected:state.inspected.map(x=>({...x,reasons:x.reasons.slice()})),candidates:options,placement:null,message:"Finished "+label+" for "+state.digit+". "+options.length+" legal locations remain, so this unit does not force a placement."};advanceUnit();}
+    if(options.length===1){
+      state.pendingPlacement={r:options[0][0],c:options[0][1],digit:state.digit};
+      state.event={kind:"conclusion",digit:state.digit,type,unit,cell:null,reasons:[],inspected:state.inspected.map(x=>({...x,reasons:x.reasons.slice()})),candidates:options,contextCells:[],sourceCells:[],placement:options[0],message:"Conclusion: after checking all nine cells in "+label+", exactly one legal location remains: row "+(options[0][0]+1)+", column "+(options[0][1]+1)+". This is a hidden single. The placement comes next, then the existing digit scan continues."};
+    }else{
+      state.event={kind:"unit-result",digit:state.digit,type,unit,cell:null,reasons:[],inspected:state.inspected.map(x=>({...x,reasons:x.reasons.slice()})),candidates:options,contextCells:[],sourceCells:[],placement:null,message:"Finished "+label+" for "+state.digit+". "+options.length+" legal locations remain, so this unit does not force a placement."};
+      advanceUnit();
+    }
     saveState();return true;
   }
   function stop() {
@@ -102,7 +147,7 @@
   function render() {
     const s=state.event,grid=state.grid;
     boardEl.innerHTML="";
-    const focusSet=new Set((s.candidates||[]).map(([r,c])=>r*9+c)),related=new Set(),inspected=new Map((s.inspected||[]).map(x=>[x.r*9+x.c,x]));
+    const focusSet=new Set((s.candidates||[]).map(([r,c])=>r*9+c)),related=new Set(),inspected=new Map((s.inspected||[]).map(x=>[x.r*9+x.c,x])),contextSet=new Set((s.contextCells||[]).map(([r,c])=>r*9+c)),sourceSet=new Set((s.sourceCells||[]).map(([r,c])=>r*9+c));
     if(s.type&&s.unit!==null) for(const [r,c] of cellsFor(s.type,s.unit)) related.add(r*9+c);
     for(let r=0;r<9;r++) for(let c=0;c<9;c++) {
       const idx=r*9+c,cell=document.createElement("button");
@@ -111,13 +156,16 @@
       if(given[r][c])cell.classList.add("given");else if(grid[r][c])cell.classList.add("solved");
       if(related.has(idx))cell.classList.add("related");
       if(inspected.has(idx))cell.classList.add(inspected.get(idx).legal?"inspected-legal":"inspected-eliminated");
+      if(contextSet.has(idx))cell.classList.add("scan-context");
+      if(sourceSet.has(idx))cell.classList.add("conflict-source");
       if(focusSet.has(idx))cell.classList.add("candidate");
       if(s.cell&&s.cell[0]===r&&s.cell[1]===c)cell.classList.add("current-cell");
+      if(sourceSet.has(idx))cell.classList.add("conflict-source");
       if(s.placement&&s.placement[0]===r&&s.placement[1]===c)cell.classList.add("focus");
       if(selectedCell&&selectedCell[0]===r&&selectedCell[1]===c)cell.classList.add("selected");
       if(grid[r][c]) cell.innerHTML='<span class="cell-value">'+grid[r][c]+'</span>';
       else if(showCandidates) {
-        const nums=candidatesFor(grid,r,c);
+        const nums=state.liveCandidates[r+","+c]||[];
         cell.innerHTML='<span class="candidate-grid">'+[1,2,3,4,5,6,7,8,9].map(n=>'<span>'+(nums.includes(n)?n:"")+'</span>').join("")+'</span>';
         cell.setAttribute("aria-label",`Row ${r+1}, column ${c+1}, empty, candidates ${nums.join(", ")||"none"}`);
       }
@@ -141,6 +189,7 @@
     $("backBtn").disabled=stepIndex===0;
     const finished=["complete","stuck","contradiction"].includes(state.status);
     $("stepBtn").disabled=finished;
+    $("backBtn").disabled=stepIndex===0;
     $("playBtn").disabled=finished;
   }
   function rebuild() { stop();state=initialState(puzzle);history=[cloneState(state)];stepIndex=0;render(); }
