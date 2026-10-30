@@ -52,12 +52,12 @@ Version 1.3 changes that architecture:
 - The solver stores its current board and scan position: active digit, unit type, and unit number.
 - A Step action evaluates exactly the next unit using the current board.
 - It records and displays that result immediately. No later unit is evaluated until the next Step or timer tick.
-- If a placement is found, the board changes immediately and the scan cursor resets to digit 1, row 1.
+- If a placement is found, the board changes immediately and the scan cursor resets to row 1 of the *same digit*. The solver advances to the next digit only after checking all rows, columns, and boxes for the current digit without finding another placement.
 - If the scan reaches the end of digit 9 without a placement, it stops and reports that this particular method is stuck.
 - The event history stores state snapshots so Previous can restore the exact earlier board and scan position. New processing after going backward replaces the abandoned future history.
 - The counter is labelled **Processed events** and counts events that have actually occurred. It does not display a total or predicted number of future steps.
 
-A unit check with exactly one legal cell is represented as a placement event: the number is placed as part of that live operation. Checks with zero, two, or more legal cells are all displayed as scan events.
+A unit check with exactly one legal cell is represented as a placement event: the number is placed as part of that live operation. The solver then continues with that same digit, rather than restarting at digit 1. Checks with zero, two, or more legal cells are all displayed as scan events.
 
 ## Understanding the stopping messages
 
