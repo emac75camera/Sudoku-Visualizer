@@ -1,6 +1,6 @@
 # Sudoku Visualizer
 
-**Version 1.5** is a dependency-free browser app for watching a Sudoku strategy calculate its next scan in real time. It is designed around a particular sequential scanning method rather than a conventional all-purpose Sudoku solver.
+**Version 1.6** is a dependency-free browser app for watching a Sudoku strategy calculate its next scan in real time. It is designed around a particular sequential scanning method rather than a conventional all-purpose Sudoku solver.
 
 ## Run it as a website
 
@@ -16,7 +16,7 @@ To publish it with GitHub Pages:
 
 You can also open `index.html` directly in a modern browser.
 
-## Version 1.5 features
+## Version 1.6 features
 
 - Interactive 9×9 Sudoku board with manual cell entry.
 - Import a puzzle by pasting an 81-character string. Use digits 1–9 for filled cells and `0` or `.` for blanks. Whitespace, commas, semicolons, and vertical bars are ignored.
@@ -86,8 +86,11 @@ The app currently does not run a separate complete solver to prove solvability o
 - **Load example**: load the included example puzzle.
 - **Clear board**: start with an empty grid.
 - **Reset puzzle**: restore the original example.
-- Click an editable cell and type 1–9 to enter a number. Backspace/Delete clears it. Conflicting entries are rejected.
+- Click an editable cell and type 1–9 to enter a number. Backspace/Delete clears it. Conflicting entries are rejected. Manual edits preserve the active scan position; edits after a stuck/contradiction restart scanning from digit 1.
 - **Show live candidates**: toggle candidate digits on cells as the scanner reaches them. Unvisited cells do not receive precomputed candidates.
+- **Show cell-by-cell scan animation**: switch between individual cell inspections and faster whole-unit summaries.
+- **Highlight colors**: independently disable blue, red, or green visual highlights.
+- Units already containing the active digit are skipped without cell-by-cell inspection.
 - **Import 81-cell puzzle**: paste a compact puzzle string and import it after duplicate validation.
 
 Keyboard shortcuts: Space toggles playback; Left/Right arrows move through events.
@@ -187,3 +190,14 @@ This is the first teaching layer, not yet a complete human-style Sudoku solver. 
 The scan cursor now advances past the unit where a hidden single was found before the placement event. Once the placement is applied, the solver continues with the next unit in the same digit cycle. Previously checked units are not repeated. After the full rows, columns, and boxes cycle finishes, the next digit begins.
 
 Candidate marks are calculated on cell inspection and stored in the event state. When a placement changes a cell's peers, cached candidates for its row, column, and box are invalidated so they are recalculated only when those cells are visited again. During inspection, the current cell is blue, intersecting constraint areas are blue, and existing matching digits responsible for an elimination are green. Occupied cells also receive a brief current-cell highlight with their number green.
+
+## Version 1.6 interaction and display updates
+
+- Manual cell edits apply directly to the current simulation board. They do not rebuild the board or reset the scan cursor. A valid edit preserves the current digit and unit position; if the solver had stopped as stuck or contradictory, editing resumes from a fresh digit-1 cycle.
+- Manual edits invalidate cached candidates only in the edited cell's row, column, and box. The event history records the edit so Previous can undo it.
+- Units that already contain the active digit are skipped without inspecting their nine cells.
+- Box labels use box-row and box-column coordinates from 1–3 (for example, box 3-3 is the bottom-right box).
+- The cell-by-cell scan animation can be disabled. In that mode, each eligible unit is evaluated in one event and the reasoning summarizes how many possible locations remain. The underlying hidden-single scan rules remain the same.
+- The current-focus panel displays filled cells out of 81 with a progress bar.
+- Blue, red, and green highlight colors can be individually disabled without changing solver behavior. Red and green elimination/source highlights take precedence over blue scanning context.
+- Manual input is validated against the current board. Original clues remain locked; user-entered cells remain editable.
