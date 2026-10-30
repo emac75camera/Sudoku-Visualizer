@@ -134,7 +134,7 @@
     if(options.length===1){
       const currentDigit=state.digit;
       const trace=state.inspected.map(x=>({...x,reasons:x.reasons.slice()}));
-      state.pendingPlacement={r:options[0][0],c:options[0][1],digit:state.digit};
+      state.pendingPlacement={r:options[0][0],c:options[0][1],digit:state.digit,typeIndex:state.typeIndex,unit:state.unit};
       advanceUnit();
       state.event={kind:"conclusion",digit:currentDigit,type,unit,cell:null,reasons:[],inspected:trace,candidates:options,contextCells:[],sourceCells:[],placement:options[0],message:"Conclusion: after checking all nine cells in "+label+", exactly one legal location remains: row "+(options[0][0]+1)+", column "+(options[0][1]+1)+". This is a hidden single. The placement comes next, then the existing digit scan continues."};
     }else{
