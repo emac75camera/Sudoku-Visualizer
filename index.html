@@ -12,14 +12,14 @@
     <header class="topbar">
       <div class="brand-mark" aria-hidden="true">▦</div>
       <div><p class="eyebrow">ALGORITHM PLAYGROUND</p><h1>Sudoku Visualizer</h1></div>
-      <span class="version">RELEASE · v1.3</span>
+      <span class="version">RELEASE · v1.4</span>
     </header>
 
     <section class="intro">
       <div>
         <p class="eyebrow">WATCH THE LOGIC UNFOLD</p>
         <h2>One digit at a time.</h2>
-        <p class="subhead">A live, step-by-step walkthrough of your scan-based solving method. No precomputed move list.</p>
+        <p class="subhead">Watch the solver inspect every cell, explain each elimination, and build a deduction one step at a time.</p>
       </div>
       <div class="mode-pill"><span class="pulse"></span> Sequential scan mode</div>
     </section>
@@ -28,7 +28,7 @@
       <div class="board-panel panel">
         <div class="panel-heading">
           <div><p class="eyebrow">PUZZLE BOARD</p><h3>Live grid</h3></div>
-          <div class="board-legend"><span><i class="legend-given"></i> Given</span><span><i class="legend-found"></i> Solved</span><span><i class="legend-focus"></i> Scanning</span></div>
+          <div class="board-legend"><span><i class="legend-given"></i> Given</span><span><i class="legend-found"></i> Solved</span><span><i class="legend-focus"></i> Current cell</span><span><i class="legend-eliminated"></i> Eliminated</span><span><i class="legend-possible"></i> Still possible</span></div>
         </div>
         <div id="board" class="sudoku-board" role="grid" aria-label="Sudoku puzzle"></div>
         <div class="board-actions">
@@ -68,8 +68,8 @@
         </section>
 
         <section class="panel reasoning-panel">
-          <div class="panel-heading compact"><div><p class="eyebrow">SOLVER NOTEBOOK</p><h3>What it's doing</h3></div><span class="live-dot"></span></div>
-          <div id="reasoning" class="reasoning" aria-live="polite">Each scan is calculated when you advance. No future steps are precomputed.</div>
+          <div class="panel-heading compact"><div><p class="eyebrow">SOLVER NOTEBOOK</p><h3>Think-aloud reasoning</h3></div><span class="live-dot"></span></div>
+          <div id="reasoning" class="reasoning" aria-live="polite">Each cell is checked against its row, column, and 3×3 box. No future checks are precomputed.</div><div id="reasoningDetails" class="reasoning-details"></div>
           <div class="stats-grid">
             <div><strong id="placements">0</strong><span>Placements</span></div>
             <div><strong id="scans">0</strong><span>Scans</span></div>
