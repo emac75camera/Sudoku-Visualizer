@@ -12,7 +12,7 @@
   const $ = id => document.getElementById(id);
   const TYPES = ["row", "column", "box"];
   let puzzle = clone(EXAMPLE), given = EXAMPLE.map(row => row.map(n => n !== 0));
-  let selectedCell = null, timer = null, speed = 1, showCandidates = false;
+  let selectedCell = null, timer = null, speed = 1, showCandidates = false, showScanAnimation = true;
   let state, history = [], stepIndex = 0;
 
   function clone(grid) { return grid.map(row => row.slice()); }
@@ -20,7 +20,7 @@
   function countFilled(grid) { return grid.flat().filter(Boolean).length; }
   function boxIndex(r,c) { return Math.floor(r/3)*3+Math.floor(c/3); }
   function unitName(type,n) {
-    return type === "row" ? `row ${n+1}` : type === "column" ? `column ${n+1}` : `box ${Math.floor(n/3)*3+1}–${Math.floor(n/3)*3+3}`;
+    return type === "row" ? `row ${n+1}` : type === "column" ? `column ${n+1}` : `box ${Math.floor(n/3)+1}-${n%3+1}`;
   }
   function cellsFor(type,n) {
     if(type==="row") return Array.from({length:9},(_,c)=>[n,c]);
@@ -113,6 +113,30 @@
     if(state.filled===81){finish("complete","Puzzle complete. The solver made "+state.placements+" placements after "+state.scans+" cell inspections.");saveState();return true;}
     if(state.digit>9){finishCycle();saveState();return true;}
     const type=TYPES[state.typeIndex],unit=state.unit,label=unitName(type,unit);
+    if(cellsFor(type,unit).some(([r,c])=>state.grid[r][c]===state.digit)){
+      state.event={kind:"unit-skip",digit:state.digit,type,unit,cell:null,reasons:[],inspected:[],candidates:[],contextCells:[],sourceCells:[],placement:null,message:"Skip "+label+" for "+state.digit+": this unit already contains "+state.digit+", so none of its cells need to be scanned."};
+      advanceUnit();saveState();return true;
+    }
+    if(!showScanAnimation){
+      const trace=[];
+      for(const [r,c] of cellsFor(type,unit)){
+        const result=explainCell(state.grid,r,c,state.digit);
+        trace.push({r,c,legal:result.legal,reasons:result.reasons});
+        state.liveCandidates[r+","+c]=state.grid[r][c]===0?candidatesFor(state.grid,r,c):[];
+      }
+      const options=trace.filter(x=>x.legal).map(x=>[x.r,x.c]);
+      state.scans+=9;
+      if(options.length===1){
+        const currentDigit=state.digit;
+        state.pendingPlacement={r:options[0][0],c:options[0][1],digit:state.digit,typeIndex:state.typeIndex,unit:state.unit};
+        advanceUnit();
+        state.event={kind:"conclusion",digit:currentDigit,type,unit,cell:null,reasons:[],inspected:trace,candidates:options,contextCells:[],sourceCells:[],placement:options[0],message:"Conclusion: after checking all nine cells in "+label+", exactly one legal location remains: row "+(options[0][0]+1)+", column "+(options[0][1]+1)+". This is a hidden single. The placement comes next, then the existing digit scan continues."};
+      }else{
+        state.event={kind:"unit-result",digit:state.digit,type,unit,cell:null,reasons:[],inspected:trace,candidates:options,contextCells:[],sourceCells:[],placement:null,message:"Inspect "+label+" for "+state.digit+". "+(options.length===0?"All empty cells are eliminated; no legal locations remain.":options.length+" possible locations remain. No placement can be made.")};
+        advanceUnit();
+      }
+      saveState();return true;
+    }
     if(state.cellIndex<9){
       const [r,c]=cellsFor(type,unit)[state.cellIndex],result=explainCell(state.grid,r,c,state.digit);
       const key=r+","+c;
@@ -159,9 +183,9 @@
       if(given[r][c])cell.classList.add("given");else if(grid[r][c])cell.classList.add("solved");
       if(related.has(idx))cell.classList.add("related");
       if(inspected.has(idx))cell.classList.add(inspected.get(idx).legal?"inspected-legal":"inspected-eliminated");
-      if(contextSet.has(idx))cell.classList.add("scan-context");
+      if(showScanAnimation&&contextSet.has(idx))cell.classList.add("scan-context");
       if(focusSet.has(idx))cell.classList.add("candidate");
-      if(s.cell&&s.cell[0]===r&&s.cell[1]===c)cell.classList.add("current-cell");
+      if(showScanAnimation&&s.cell&&s.cell[0]===r&&s.cell[1]===c)cell.classList.add("current-cell");
       if(sourceSet.has(idx))cell.classList.add("conflict-source");
       if(s.placement&&s.placement[0]===r&&s.placement[1]===c)cell.classList.add("focus");
       if(selectedCell&&selectedCell[0]===r&&selectedCell[1]===c)cell.classList.add("selected");
@@ -175,8 +199,13 @@
       boardEl.appendChild(cell);
     }
     $("focusNumber").textContent=s.digit||"—";
-    $("focusTitle").textContent=({intro:"Ready to scan",inspect:"Inspecting a cell",conclusion:"Deduction found","unit-result":"Unit checked",place:"Placement found",stuck:"Scan method stuck",contradiction:"Contradiction detected",complete:"Puzzle complete"})[s.kind]||"Scanning";
-    $("focusDescription").textContent=({intro:"Press Play or Step to inspect the first cell.",inspect:"Testing this cell against its row, column, and 3×3 box.",conclusion:"All nine cells were checked. Exactly one legal location remains.","unit-result":"The unit has been fully inspected.",place:"A unique legal location was found and placed.",stuck:"No forced placement was found in a complete pass.",contradiction:"The current board contains a digit with no legal destination.",complete:"Every cell is filled."})[s.kind]||"";
+    $("progressText").textContent=state.filled+" / 81";
+    $("progressFill").style.width=(state.filled/81*100)+"%";
+    $("progressPercent").textContent=Math.round(state.filled/81*100)+"%";
+    const progressBar=document.querySelector(".board-progress");
+    if(progressBar)progressBar.setAttribute("aria-valuenow",String(state.filled));
+    $("focusTitle").textContent=({intro:"Ready to scan",inspect:"Inspecting a cell",conclusion:"Deduction found","unit-result":"Unit checked","unit-skip":"Unit skipped","manual-edit":"Manual board edit",place:"Placement found",stuck:"Scan method stuck",contradiction:"Contradiction detected",complete:"Puzzle complete"})[s.kind]||"Scanning";
+    $("focusDescription").textContent=({intro:"Press Play or Step to inspect the first cell.",inspect:"Testing this cell against its row, column, and 3×3 box.",conclusion:"All nine cells were checked. Exactly one legal location remains.","unit-result":"The unit has been fully inspected.","unit-skip":"The active digit is already present in this unit.","manual-edit":"The board changed without resetting the scan cursor.",place:"A unique legal location was found and placed.",stuck:"No forced placement was found in a complete pass.",contradiction:"The current board contains a digit with no legal destination.",complete:"Every cell is filled."})[s.kind]||"";
     $("scanUnit").textContent=s.type?unitName(s.type,s.unit):({complete:"All 81 cells filled",stuck:"No forced placement",contradiction:"Invalid completion path",intro:"Waiting for first scan"})[s.kind]||"";
     $("stepCount").textContent=`Processed events: ${stepIndex}`;
     $("reasoning").textContent=s.message;
@@ -184,7 +213,7 @@
     if(s.cell){const h=document.createElement("strong");h.textContent="Cell: row "+(s.cell[0]+1)+", column "+(s.cell[1]+1);details.appendChild(h);}
     if(s.reasons&&s.reasons.length){const ul=document.createElement("ul");s.reasons.forEach(reason=>{const li=document.createElement("li");li.textContent=reason;ul.appendChild(li);});details.appendChild(ul);}
     else if(s.kind==="inspect"){const p=document.createElement("p");p.textContent="No row, column, or box contains this digit, so this cell remains a legal possibility.";details.appendChild(p);}
-    if(s.inspected&&s.inspected.length){const p=document.createElement("p");p.textContent="Inspected "+s.inspected.length+" of 9 cells in this unit. "+s.candidates.length+" remain legal.";details.appendChild(p);}
+    if(s.inspected&&s.inspected.length&&s.kind!=="inspect"){const p=document.createElement("p");p.textContent="Inspected "+s.inspected.length+" of 9 cells in this unit. "+s.candidates.length+" remain legal.";details.appendChild(p);}
     $("placements").textContent=state.placements;
     $("scans").textContent=state.scans;
     $("filled").textContent=state.filled;
@@ -209,12 +238,30 @@
   function editSelected(key) {
     if(!selectedCell)return;
     const [r,c]=selectedCell;if(given[r][c])return;
-    const value=/^[1-9]$/.test(key)?Number(key):0,candidate=clone(puzzle);candidate[r][c]=value;
+    const value=/^[1-9]$/.test(key)?Number(key):0,candidate=clone(state.grid);candidate[r][c]=value;
     if(!validPuzzle(candidate)){$("reasoning").textContent="That entry conflicts with a number already in its row, column, or 3×3 box.";return;}
-    loadGrid(candidate);
+    stop();
+    const wasFinished=["stuck","contradiction","complete"].includes(state.status);
+    const pending=state.pendingPlacement;
+    if(pending){
+      const stillValid=candidate[pending.r][pending.c]===0&&legal(candidate,pending.r,pending.c,pending.digit);
+      if(!stillValid){
+        state.digit=pending.digit;state.typeIndex=pending.typeIndex;state.unit=pending.unit;
+        resetUnitTrace();state.pendingPlacement=null;
+      }
+    }
+    state.grid=candidate;state.filled=countFilled(candidate);
+    if(wasFinished){state.digit=1;state.typeIndex=0;state.unit=0;state.cellIndex=0;state.inspected=[];state.legalPositions=[];state.pendingPlacement=null;state.status="ready";}
+    for(let rr=0;rr<9;rr++)for(let cc=0;cc<9;cc++)if(rr===r||cc===c||boxIndex(rr,cc)===boxIndex(r,c))delete state.liveCandidates[rr+","+cc];
+    state.event={kind:"manual-edit",digit:state.digit,type:null,unit:null,cell:[r,c],reasons:[],inspected:[],candidates:[],contextCells:[],sourceCells:[],placement:null,message:"Manual edit: "+(value?"entered "+value:"cleared")+" at row "+(r+1)+", column "+(c+1)+". The board and candidate cache were updated without resetting the active scan position."+(wasFinished?" The previous scan had stopped, so a fresh digit cycle is starting from 1.":"")};
+    saveState();render();
   }
 
   $("candidateToggle").addEventListener("change",e=>{showCandidates=e.target.checked;render();});
+  $("scanVisualToggle").addEventListener("change",e=>{showScanAnimation=e.target.checked;render();});
+  for(const color of ["blue","red","green"]){
+    $("color"+color[0].toUpperCase()+color.slice(1)).addEventListener("change",e=>document.body.classList.toggle("hide-"+color,!e.target.checked));
+  }
   $("importBtn").addEventListener("click",()=>{
     const compact=$("puzzleString").value.trim().replace(/[\s,;|]+/g,""),status=$("importStatus");
     if(!/^[0-9.]{81}$/.test(compact)){status.textContent="Expected exactly 81 digits, dots, or zeros. Found "+compact.length+" characters.";status.className="import-status error";return;}
