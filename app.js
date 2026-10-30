@@ -125,8 +125,8 @@
       boardEl.appendChild(cell);
     }
     $("focusNumber").textContent=s.digit||"—";
-    $("focusTitle").textContent=({intro:"Ready to scan",scan:"Checking a unit",place:"Placement found",stuck:"Scan method stuck",contradiction:"Contradiction detected",complete:"Puzzle complete"})[s.kind]||"Scanning";
-    $("focusDescription").textContent=({intro:"Press Play or Step to begin live processing.",scan:"One unit was just checked. The next check has not been calculated yet.",place:"A unique legal location was found and placed.",stuck:"No forced placement was found in a complete pass.",contradiction:"The current board contains a digit with no legal destination.",complete:"Every cell is filled."})[s.kind]||"";
+    $("focusTitle").textContent=({intro:"Ready to scan",inspect:"Inspecting a cell",conclusion:"Deduction found","unit-result":"Unit checked",place:"Placement found",stuck:"Scan method stuck",contradiction:"Contradiction detected",complete:"Puzzle complete"})[s.kind]||"Scanning";
+    $("focusDescription").textContent=({intro:"Press Play or Step to inspect the first cell.",inspect:"Testing this cell against its row, column, and 3×3 box.",conclusion:"All nine cells were checked. Exactly one legal location remains.","unit-result":"The unit has been fully inspected.",place:"A unique legal location was found and placed.",stuck:"No forced placement was found in a complete pass.",contradiction:"The current board contains a digit with no legal destination.",complete:"Every cell is filled."})[s.kind]||"";
     $("scanUnit").textContent=s.type?unitName(s.type,s.unit):({complete:"All 81 cells filled",stuck:"No forced placement",contradiction:"Invalid completion path",intro:"Waiting for first scan"})[s.kind]||"";
     $("stepCount").textContent=`Processed events: ${stepIndex}`;
     $("reasoning").textContent=s.message;
