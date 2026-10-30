@@ -40,9 +40,9 @@ The visualizer follows this sequence:
 3. Inspect all nine columns in order.
 4. Inspect all nine 3×3 boxes in order.
 5. In each unit, identify empty cells where the active digit is legal. A legal cell must not already have that digit in its row, column, or box.
-6. If a unit has exactly one legal location, place the digit there immediately and restart the entire process at digit 1.
-7. If no placement is found, continue to the next unit and then the next digit.
-8. If all 243 unit checks (9 digits × 3 unit types × 9 units) are completed without a placement, report **Scan method stuck**.
+6. If exactly one legal location remains, present the hidden-single deduction as its own event, then place the digit in the following event.
+7. After a placement, restart scanning from the first row, column, and box for the same digit. Advance to the next digit only after a full pass for the current digit finds no placement.
+8. If a complete pass through digits 1–9 produces no placement, report **Scan method stuck**.
 
 This is a single-digit hidden-single scan. It does not use pencil marks, candidate notation, pairs, X-Wing, guessing, or backtracking to decide placements. The candidate overlay is a separate visual aid only.
 
