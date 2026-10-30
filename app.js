@@ -23,10 +23,12 @@
   let selectedCell = null;
   let timer = null;
   let speed = 1;
+  let showCandidates = false;
 
   function clone(grid) { return grid.map(row => row.slice()); }
   function same(a, b) { return JSON.stringify(a) === JSON.stringify(b); }
   function countFilled(grid) { return grid.flat().filter(Boolean).length; }
+  function candidatesFor(grid, r, c) { return [1,2,3,4,5,6,7,8,9].filter(n => legal(grid,r,c,n)); }
   function unitName(type, n) {
     return type === "row" ? `row ${n + 1}` : type === "column" ? `column ${n + 1}` : `box ${Math.floor(n / 3) * 3 + 1}–${Math.floor(n / 3) * 3 + 3}`;
   }
@@ -121,7 +123,15 @@
       if (focusSet.has(idx)) cell.classList.add("candidate");
       if (s.placement && s.placement[0]===r && s.placement[1]===c) cell.classList.add("focus");
       if (selectedCell && selectedCell[0]===r && selectedCell[1]===c) cell.classList.add("selected");
-      cell.textContent=board[r][c] || "";
+      if (board[r][c]) {
+        cell.innerHTML = '<span class="cell-value">' + board[r][c] + '</span>';
+      } else if (showCandidates) {
+        const nums = candidatesFor(board,r,c);
+        cell.innerHTML = '<span class="candidate-grid">' + [1,2,3,4,5,6,7,8,9].map(n => '<span>' + (nums.includes(n)?n:'') + '</span>').join('') + '</span>';
+        cell.setAttribute("aria-label", 'Row ' + (r+1) + ', column ' + (c+1) + ', empty, candidates ' + (nums.join(", ") || "none"));
+      } else {
+        cell.textContent = "";
+      }
       cell.addEventListener("click",()=>{selectedCell=[r,c];render();});
       boardEl.appendChild(cell);
     }
@@ -168,6 +178,28 @@
     puzzle=candidate; rebuild();
   }
 
+  $("candidateToggle").addEventListener("change",e=>{showCandidates=e.target.checked;render();});
+  $("importBtn").addEventListener("click",()=>{
+    const raw=$("puzzleString").value.trim();
+    const compact=raw.replace(/[\\s|,;]+/g,"");
+    const status=$("importStatus");
+    if(!/^[0-9.]{81}$/.test(compact)){
+      status.textContent="Expected exactly 81 digits, dots, or zeros. Found "+compact.length+" characters.";
+      status.className="import-status error";
+      return;
+    }
+    const grid=Array.from({length:9},(_,r)=>Array.from({length:9},(_,c)=>{
+      const ch=compact[r*9+c]; return ch==="."||ch==="0"?0:Number(ch);
+    }));
+    if(!validPuzzle(clone(grid))){
+      status.textContent="This puzzle has a duplicate in a row, column, or 3×3 box.";
+      status.className="import-status error";
+      return;
+    }
+    loadGrid(grid);
+    status.textContent="Puzzle imported successfully.";
+    status.className="import-status success";
+  });
   $("sampleBtn").addEventListener("click",()=>loadGrid(EXAMPLE));
   $("clearBtn").addEventListener("click",()=>loadGrid(Array.from({length:9},()=>Array(9).fill(0))));
   $("resetBtn").addEventListener("click",()=>{puzzle=clone(EXAMPLE);given=EXAMPLE.map(row=>row.map(n=>n!==0));selectedCell=null;rebuild();});
