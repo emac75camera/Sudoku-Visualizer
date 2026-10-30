@@ -19,3 +19,22 @@
 .cell.conflict-source{background:#244b3d!important;color:var(--green)!important;box-shadow:inset 0 0 0 2px #76d6ad}
 .cell.conflict-source .cell-value,.cell.current-cell .cell-value{color:var(--green)!important}
 .cell.current-cell.conflict-source{background:#28639a!important;outline-color:#8bc8ff}
+
+/* v1.6 controls and display preferences */
+.display-settings{display:flex;align-items:center;gap:12px;flex-wrap:wrap;color:#b9c9da;font-size:11px}
+.display-settings strong{color:#eaf1fa;margin-right:3px}
+.display-settings label{display:flex;align-items:center;gap:5px}
+.display-settings input{accent-color:#80baff}
+.progress-heading{display:flex;justify-content:space-between;align-items:center;color:#dce8f5;font-size:12px;margin-top:16px}
+.board-progress{height:10px;border-radius:8px;background:#314154;margin:8px 0;overflow:hidden}
+.board-progress-fill{height:100%;width:0;background:linear-gradient(90deg,#3d9b76,#80d9ad);border-radius:8px;transition:width .15s ease}
+.cell.inspected-eliminated{background:#59313a!important;color:#ffd5d8!important}
+.cell.inspected-legal{background:#244a43!important;color:#d4ffed!important}
+.cell.conflict-source{background:#244b3d!important;color:var(--green)!important;box-shadow:inset 0 0 0 2px #76d6ad!important}
+.cell.current-cell{background:#28639a!important;color:#fff!important;outline:2px solid #8bc8ff!important}
+.cell.scan-context{background:#254a70!important;color:#dceeff!important}
+.cell.current-cell.conflict-source,.cell.current-cell.inspected-legal{background:#244b3d!important;color:var(--green)!important;outline-color:#76d6ad!important}
+.cell.current-cell.inspected-eliminated{background:#59313a!important;color:#ffd5d8!important;outline-color:#e69aa2!important}
+body.hide-blue .cell.current-cell,body.hide-blue .cell.scan-context{background:transparent!important;outline:none!important;box-shadow:none!important}
+body.hide-red .cell.inspected-eliminated{background:transparent!important;color:inherit!important}
+body.hide-green .cell.inspected-legal,body.hide-green .cell.conflict-source{background:transparent!important;color:inherit!important;box-shadow:none!important}
