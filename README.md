@@ -1,6 +1,6 @@
 # Sudoku Visualizer
 
-**Version 1.4** is a dependency-free browser app for watching a Sudoku strategy calculate its next scan in real time. It is designed around a particular sequential scanning method rather than a conventional all-purpose Sudoku solver.
+**Version 1.5** is a dependency-free browser app for watching a Sudoku strategy calculate its next scan in real time. It is designed around a particular sequential scanning method rather than a conventional all-purpose Sudoku solver.
 
 ## Run it as a website
 
@@ -16,13 +16,16 @@ To publish it with GitHub Pages:
 
 You can also open `index.html` directly in a modern browser.
 
-## Version 1.4 features
+## Version 1.5 features
 
 - Interactive 9×9 Sudoku board with manual cell entry.
 - Import a puzzle by pasting an 81-character string. Use digits 1–9 for filled cells and `0` or `.` for blanks. Whitespace, commas, semicolons, and vertical bars are ignored.
 - Basic input validation rejects duplicate digits in a row, column, or 3×3 box.
-- Optional candidate overlay shows legal digits for each empty cell. It is **display-only** and does not influence solver decisions.
-- Live scan processing: the next unit is examined only when the user presses Step or the playback timer advances.
+- Optional live candidate overlay calculates candidate digits only when the scanner reaches each cell. Candidate lists are refreshed when a placement changes that cell's row, column, or box.
+- Live scan processing: the next cell is examined only when the user presses Next or the playback timer advances.
+- The active digit completes its current rows → columns → boxes cycle after a placement. The solver does not restart that digit's cycle or repeat units already checked.
+- The current cell is highlighted blue; the row/column/box being cross-referenced is highlighted blue, and existing matching digits that eliminate a candidate are highlighted green.
+- Playback speed ranges from 1× to 10×.
 - Cell-by-cell reasoning: every inspected cell is marked as still possible or eliminated.
 - Explicit elimination explanations identify the row, column, and/or 3×3 box that rules out a cell.
 - Unit conclusions explain whether zero, multiple, or exactly one legal position remains.
@@ -41,8 +44,9 @@ The visualizer follows this sequence:
 4. Inspect all nine 3×3 boxes in order.
 5. In each unit, identify empty cells where the active digit is legal. A legal cell must not already have that digit in its row, column, or box.
 6. If exactly one legal location remains, present the hidden-single deduction as its own event, then place the digit in the following event.
-7. After a placement, restart scanning from the first row, column, and box for the same digit. Advance to the next digit only after a full pass for the current digit finds no placement.
-8. If a complete pass through digits 1–9 produces no placement, report **Scan method stuck**.
+7. After a placement, continue with the next unit in the current digit's existing cycle. Do not restart the cycle or repeat units already checked.
+8. Once the current digit has completed its rows, columns, and boxes, advance to the next digit.
+9. If a complete pass through digits 1–9 produces no placement, report **Scan method stuck**.
 
 This is a single-digit hidden-single scan. It does not use pencil marks, candidate notation, pairs, X-Wing, guessing, or backtracking to decide placements. The candidate overlay is a separate visual aid only.
 
@@ -52,10 +56,10 @@ Version 1.2 built a complete array of scan and placement events before playback 
 
 Version 1.3 changed that architecture. Version 1.4 adds cell-by-cell explanations:
 
-- The solver stores its current board and scan position: active digit, unit type, and unit number.
+- The solver stores its current board and scan position: active digit, unit type, unit number, cell position, live candidate cache, and the current unit's inspection trace.
 - A Step action evaluates exactly the next cell in the current unit, or presents the unit conclusion once all nine cells have been inspected.
 - It records and displays the cell decision immediately. No later cell is evaluated until the next Step or timer tick.
-- If a placement is found, the board changes immediately and the scan cursor resets to row 1 of the *same digit*. The solver advances to the next digit only after checking all rows, columns, and boxes for the current digit without finding another placement.
+- If a placement is found, the deduction and placement are separate events. The scan cursor has already advanced to the next unit, so after placement the solver continues the current digit's cycle without rescanning earlier units. It advances to the next digit after the current digit's rows, columns, and boxes have been completed.
 - If the scan reaches the end of digit 9 without a placement, it stops and reports that this particular method is stuck.
 - The event history stores state snapshots so Previous can restore the exact earlier board and scan position. New processing after going backward replaces the abandoned future history.
 - The counter is labelled **Processed events** and counts events that have actually occurred. It does not display a total or predicted number of future steps.
@@ -76,14 +80,14 @@ The app currently does not run a separate complete solver to prove solvability o
 ## Controls
 
 - **Play / Pause**: automatically calculate and display successive scans.
-- **Step**: calculate exactly one next unit check or placement.
-- **←**: restore the previous recorded event and board state.
-- **Playback speed**: change the delay between automatic processing events.
+- **Next**: inspect exactly one cell, show a unit conclusion, or place a previously identified forced digit.
+- **Previous**: restore the previous recorded event and board state.
+- **Playback speed**: change the delay between automatic processing events, up to 10×.
 - **Load example**: load the included example puzzle.
 - **Clear board**: start with an empty grid.
 - **Reset puzzle**: restore the original example.
 - Click an editable cell and type 1–9 to enter a number. Backspace/Delete clears it. Conflicting entries are rejected.
-- **Show candidates**: toggle legal candidate digits on empty cells. This is a visual aid only.
+- **Show live candidates**: toggle candidate digits on cells as the scanner reaches them. Unvisited cells do not receive precomputed candidates.
 - **Import 81-cell puzzle**: paste a compact puzzle string and import it after duplicate validation.
 
 Keyboard shortcuts: Space toggles playback; Left/Right arrows move through events.
@@ -176,3 +180,10 @@ Recommended engineering steps:
 The solver now separates a unit scan into individual cell inspections. For each cell, it records whether the active digit is legal and every applicable reason it is eliminated: the cell is occupied, its row contains the active digit, its column contains the active digit, or its 3×3 box contains the active digit. The board marks inspected cells, remaining legal positions, and the current cell. Once all nine cells in a unit have been inspected, a separate conclusion event explains the result. If exactly one legal location remains, the solver presents a hidden-single deduction; the following event places the digit. Event snapshots include the inspection trace so Previous restores the explanation as well as the board.
 
 This is the first teaching layer, not yet a complete human-style Sudoku solver. It explains the existing single-digit hidden-single scan.
+
+
+## Version 1.5 scan and display updates
+
+The scan cursor now advances past the unit where a hidden single was found before the placement event. Once the placement is applied, the solver continues with the next unit in the same digit cycle. Previously checked units are not repeated. After the full rows, columns, and boxes cycle finishes, the next digit begins.
+
+Candidate marks are calculated on cell inspection and stored in the event state. When a placement changes a cell's peers, cached candidates for its row, column, and box are invalidated so they are recalculated only when those cells are visited again. During inspection, the current cell is blue, intersecting constraint areas are blue, and existing matching digits responsible for an elimination are green. Occupied cells also receive a brief current-cell highlight with their number green.
