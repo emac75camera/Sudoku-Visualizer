@@ -3,3 +3,12 @@
 @media(max-width:850px){.workspace{grid-template-columns:1fr}.side-column{grid-template-columns:repeat(2,minmax(0,1fr))}.reasoning-panel{grid-column:1/-1}.board-panel{max-width:650px;width:100%;margin:auto}}@media(max-width:560px){.app-shell{padding:18px 12px}.intro{align-items:start;flex-direction:column;padding:22px 0 17px}.side-column{grid-template-columns:1fr}.reasoning-panel{grid-column:auto}.panel{padding:13px}.board-legend{gap:7px}.board-legend span{font-size:9px}.cell{font-size:clamp(14px,5vw,23px)}footer{gap:10px;flex-direction:column}}
 
 .input-tools{margin-top:16px;padding:13px;background:#111a26;border:1px solid #2b394b;border-radius:10px;display:grid;gap:8px}.toggle-label{display:flex;align-items:center;gap:8px;font-size:12px;color:#d5e2f1}.toggle-label input{accent-color:#80baff}.muted-inline{color:#8293a8;font-size:10px}.input-label{font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:#9fb1c6;font-weight:800}.input-tools textarea{width:100%;resize:vertical;min-height:48px;background:#1b2736;color:#eaf1fa;border:1px solid #40516a;border-radius:7px;padding:9px;font:12px/1.4 ui-monospace,SFMono-Regular,Consolas,monospace}.import-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.import-status{font-size:10px;color:#9eafc2}.import-status.error{color:#f08d8d}.import-status.success{color:#76d6ad}.cell{position:relative}.cell-value{position:relative;z-index:1}.candidate-grid{position:absolute;inset:2px;display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,1fr);align-items:center;justify-items:center;color:#9fc8ef;font-size:clamp(7px,1.1vw,10px);font-weight:500;line-height:1;pointer-events:none}
+
+/* v1.4 cell-by-cell reasoning states */
+.legend-eliminated{background:#a65d68}.legend-possible{background:#76d6ad}
+.cell.inspected-eliminated{background:#59313a;color:#ffd5d8}
+.cell.inspected-legal{background:#244a43;color:#d4ffed}
+.cell.candidate{background:#315b50;color:#e1fff2}
+.cell.current-cell{outline:3px solid var(--gold);outline-offset:-3px;z-index:2}
+.reasoning-details{margin-top:9px;padding:10px 12px;background:#172331;border:1px solid #2b394b;border-radius:9px;color:#b9c9da;font-size:11px;min-height:34px}
+.reasoning-details ul{margin:7px 0 0;padding-left:18px}.reasoning-details li{margin:3px 0}.reasoning-details p{margin:7px 0 0}
