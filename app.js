@@ -110,8 +110,8 @@
       state.event={kind:"place",digit,type:null,unit:null,cell:[r,c],reasons:[],inspected:[],candidates:[],contextCells:[],sourceCells:[],placement:[r,c],message:"Place "+digit+" at row "+(r+1)+", column "+(c+1)+". Continue the remaining units in this digit's current scan cycle; do not restart the cycle."};
       saveState();return true;
     }
-    if(state.digit>9){finishCycle();saveState();return true;}
     if(state.filled===81){finish("complete","Puzzle complete. The solver made "+state.placements+" placements after "+state.scans+" cell inspections.");saveState();return true;}
+    if(state.digit>9){finishCycle();saveState();return true;}
     const type=TYPES[state.typeIndex],unit=state.unit,label=unitName(type,unit);
     if(state.cellIndex<9){
       const [r,c]=cellsFor(type,unit)[state.cellIndex],result=explainCell(state.grid,r,c,state.digit);
@@ -160,7 +160,6 @@
       if(related.has(idx))cell.classList.add("related");
       if(inspected.has(idx))cell.classList.add(inspected.get(idx).legal?"inspected-legal":"inspected-eliminated");
       if(contextSet.has(idx))cell.classList.add("scan-context");
-      if(sourceSet.has(idx))cell.classList.add("conflict-source");
       if(focusSet.has(idx))cell.classList.add("candidate");
       if(s.cell&&s.cell[0]===r&&s.cell[1]===c)cell.classList.add("current-cell");
       if(sourceSet.has(idx))cell.classList.add("conflict-source");
