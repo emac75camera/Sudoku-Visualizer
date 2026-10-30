@@ -12,14 +12,14 @@
     <header class="topbar">
       <div class="brand-mark" aria-hidden="true">▦</div>
       <div><p class="eyebrow">ALGORITHM PLAYGROUND</p><h1>Sudoku Visualizer</h1></div>
-      <span class="version">RELEASE · v1.2</span>
+      <span class="version">RELEASE · v1.3</span>
     </header>
 
     <section class="intro">
       <div>
         <p class="eyebrow">WATCH THE LOGIC UNFOLD</p>
         <h2>One digit at a time.</h2>
-        <p class="subhead">A visual walkthrough of your scan-based solving method. No candidate notation required.</p>
+        <p class="subhead">A live, step-by-step walkthrough of your scan-based solving method. No precomputed move list.</p>
       </div>
       <div class="mode-pill"><span class="pulse"></span> Sequential scan mode</div>
     </section>
@@ -51,8 +51,8 @@
           <div class="focus-number" id="focusNumber">1</div>
           <h3 id="focusTitle">Ready to scan</h3>
           <p id="focusDescription" class="muted">Press Play or Step to begin checking where this digit can go.</p>
-          <div class="scan-track"><div id="scanProgress" class="scan-progress"></div></div>
-          <div class="scan-meta"><span id="scanUnit">Waiting for first scan</span><span id="stepCount">Step 0</span></div>
+          <div class="scan-track" aria-label="Live scan activity"><div id="scanProgress" class="scan-progress"></div></div>
+          <div class="scan-meta"><span id="scanUnit">Waiting for first scan</span><span id="stepCount">Processed events: 0</span></div>
         </section>
 
         <section class="panel controls-panel">
@@ -69,7 +69,7 @@
 
         <section class="panel reasoning-panel">
           <div class="panel-heading compact"><div><p class="eyebrow">SOLVER NOTEBOOK</p><h3>What it's doing</h3></div><span class="live-dot"></span></div>
-          <div id="reasoning" class="reasoning" aria-live="polite">The solver will explain each scan and placement here.</div>
+          <div id="reasoning" class="reasoning" aria-live="polite">Each scan is calculated when you advance. No future steps are precomputed.</div>
           <div class="stats-grid">
             <div><strong id="placements">0</strong><span>Placements</span></div>
             <div><strong id="scans">0</strong><span>Scans</span></div>
