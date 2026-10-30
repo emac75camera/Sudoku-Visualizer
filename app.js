@@ -181,7 +181,7 @@
   $("candidateToggle").addEventListener("change",e=>{showCandidates=e.target.checked;render();});
   $("importBtn").addEventListener("click",()=>{
     const raw=$("puzzleString").value.trim();
-    const compact=raw.replace(/[\\s|,;]+/g,"");
+    const compact=raw.replace(/[\s,;|]+/g,"");
     const status=$("importStatus");
     if(!/^[0-9.]{81}$/.test(compact)){
       status.textContent="Expected exactly 81 digits, dots, or zeros. Found "+compact.length+" characters.";
