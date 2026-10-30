@@ -16,7 +16,7 @@
   let state, history = [], stepIndex = 0;
 
   function clone(grid) { return grid.map(row => row.slice()); }
-  function cloneState(s) { return {...s, grid:clone(s.grid)}; }
+  function cloneState(s) { return JSON.parse(JSON.stringify(s)); }
   function countFilled(grid) { return grid.flat().filter(Boolean).length; }
   function boxIndex(r,c) { return Math.floor(r/3)*3+Math.floor(c/3); }
   function unitName(type,n) {
@@ -46,51 +46,54 @@
     return true;
   }
   function initialState(grid) {
-    return {grid:clone(grid),digit:1,typeIndex:0,unit:0,scans:0,placements:0,filled:countFilled(grid),status:"ready",event:{
-      kind:"intro",digit:1,type:null,unit:null,candidates:[],placement:null,
-      message:"Ready. Each scan will now be calculated only when you advance. The solver starts with digit 1."
-    }};
+    return {grid:clone(grid),digit:1,typeIndex:0,unit:0,cellIndex:0,inspected:[],legalPositions:[],pendingPlacement:null,scans:0,placements:0,filled:countFilled(grid),status:"ready",event:{kind:"intro",digit:1,type:null,unit:null,candidates:[],inspected:[],cell:null,reasons:[],placement:null,message:"Ready. The solver will inspect one cell at a time and explain each decision."}};
   }
   function saveState() { history=history.slice(0,stepIndex+1); history.push(cloneState(state)); stepIndex=history.length-1; }
   function finish(kind,message) {
     state.status=kind;
     state.event={kind,digit:state.digit,type:null,unit:null,candidates:[],placement:null,message};
   }
-  function advance() {
-    if(state.status==="complete"||state.status==="stuck"||state.status==="contradiction") return false;
-    if(state.filled===81) { finish("complete",`Puzzle complete. The live scan made ${state.placements} placements after ${state.scans} unit checks.`); saveState(); return true; }
-
-    const digit=state.digit,type=TYPES[state.typeIndex],unit=state.unit;
-    const open=cellsFor(type,unit).filter(([r,c])=>legal(state.grid,r,c,digit));
-    state.scans++;
-    const unitLabel=unitName(type,unit);
-
-    if(open.length===1) {
-      const [r,c]=open[0];
-      state.grid[r][c]=digit; state.filled++; state.placements++;
-      state.digit=digit; state.typeIndex=0; state.unit=0;
-      state.event={kind:"place",digit,type,unit,candidates:open,placement:[r,c],
-        message:`Live scan: ${unitLabel} has exactly one legal location for ${digit}. Place ${digit} at row ${r+1}, column ${c+1}. Restart the scan for digit ${digit}; move to the next digit only after this digit has no more forced placements.`};
-    } else {
-      state.event={kind:"scan",digit,type,unit,candidates:open,placement:null,
-        message:`Checked digit ${digit} in ${unitLabel}: ${open.length} legal ${open.length===1?"location":"locations"}. ${open.length===0?"This unit has no available location for this digit.":"No placement is forced by this unit."}`};
-      state.unit++;
-      if(state.unit===9) { state.unit=0; state.typeIndex++; }
-      if(state.typeIndex===3) {
-        state.typeIndex=0; state.digit++;
-        if(state.digit===10) {
-          const missing=[];
-          for(let d=1;d<=9;d++) {
-            const present=state.grid.flat().filter(v=>v===d).length;
-            if(present<9 && !state.grid.some((row,r)=>row.some((v,c)=>v===0&&legal(state.grid,r,c,d)))) missing.push(d);
-          }
-          if(missing.length) { state.digit=9; finish("contradiction",`Contradiction detected: digit${missing.length>1?"s":""} ${missing.join(", ")} still need placement(s), but no empty cell can legally contain ${missing.length>1?"them":"it"}. The current board cannot be completed under Sudoku rules.`); }
-          else { state.digit=9; finish("stuck","A complete pass through digits 1–9 found no forced placement. The scan method is stuck, but this alone does not prove the puzzle is unsolvable."); }
-        }
-      }
+  function explainCell(grid,r,c,digit) {
+    const value=grid[r][c];
+    if(value!==0) return {legal:false,reasons:["This cell is already occupied by "+value+"."]};
+    const reasons=[];
+    if(grid[r].includes(digit)) reasons.push("Row "+(r+1)+" already contains "+digit+".");
+    if(grid.some(row=>row[c]===digit)) reasons.push("Column "+(c+1)+" already contains "+digit+".");
+    const br=Math.floor(r/3)*3,bc=Math.floor(c/3)*3;
+    for(let rr=br;rr<br+3;rr++) for(let cc=bc;cc<bc+3;cc++) if(grid[rr][cc]===digit) reasons.push("The 3×3 box already contains "+digit+".");
+    return {legal:reasons.length===0,reasons};
+  }
+  function resetUnitTrace(){state.cellIndex=0;state.inspected=[];state.legalPositions=[];}
+  function advanceUnit(){
+    resetUnitTrace();state.unit++;
+    if(state.unit===9){state.unit=0;state.typeIndex++;}
+    if(state.typeIndex===3){state.typeIndex=0;state.digit++;}
+    if(state.digit===10){
+      const missing=[];
+      for(let d=1;d<=9;d++){let count=0,possible=false;for(let r=0;r<9;r++)for(let c=0;c<9;c++){if(state.grid[r][c]===d)count++;if(state.grid[r][c]===0&&legal(state.grid,r,c,d))possible=true;}if(count<9&&!possible)missing.push(d);}
+      if(missing.length){state.digit=9;finish("contradiction","Contradiction detected: digit(s) "+missing.join(", ")+" still need placement(s), but no empty cell can legally contain them.");}
+      else{state.digit=9;finish("stuck","A complete pass through digits 1–9 found no forced placement. This scan method is stuck, but the puzzle may still be solvable with another technique.");}
     }
-    saveState();
-    return true;
+  }
+  function advance(){
+    if(["complete","stuck","contradiction"].includes(state.status))return false;
+    if(state.filled===81){finish("complete","Puzzle complete. The solver made "+state.placements+" placements after "+state.scans+" cell inspections.");saveState();return true;}
+    if(state.pendingPlacement){
+      const r=state.pendingPlacement[0],c=state.pendingPlacement[1],d=state.digit;
+      state.grid[r][c]=d;state.filled++;state.placements++;state.pendingPlacement=null;state.typeIndex=0;state.unit=0;resetUnitTrace();
+      state.event={kind:"place",digit:d,type:null,unit:null,cell:[r,c],reasons:[],inspected:[],candidates:[],placement:[r,c],message:"Place "+d+" at row "+(r+1)+", column "+(c+1)+". Restart the scan for the same digit."};saveState();return true;
+    }
+    const type=TYPES[state.typeIndex],unit=state.unit,label=unitName(type,unit);
+    if(state.cellIndex<9){
+      const pos=cellsFor(type,unit)[state.cellIndex],r=pos[0],c=pos[1],result=explainCell(state.grid,r,c,state.digit);
+      const item={r,c,legal:result.legal,reasons:result.reasons};state.inspected.push(item);if(result.legal)state.legalPositions.push([r,c]);
+      state.cellIndex++;state.scans++;
+      state.event={kind:"inspect",digit:state.digit,type,unit,cell:[r,c],legal:result.legal,reasons:result.reasons,inspected:state.inspected.map(x=>({...x,reasons:x.reasons.slice()})),candidates:state.legalPositions.map(x=>x.slice()),placement:null,message:"Inspect row "+(r+1)+", column "+(c+1)+" for "+state.digit+": "+(result.legal?"still possible.":"eliminated.")};saveState();return true;
+    }
+    const options=state.legalPositions.map(x=>x.slice());
+    if(options.length===1){state.pendingPlacement=options[0].slice();state.event={kind:"conclusion",digit:state.digit,type,unit,cell:null,reasons:[],inspected:state.inspected.map(x=>({...x,reasons:x.reasons.slice()})),candidates:options,placement:options[0],message:"Conclusion: after checking all nine cells in "+label+", exactly one legal location remains: row "+(options[0][0]+1)+", column "+(options[0][1]+1)+". This is a hidden single."};}
+    else{state.event={kind:"unit-result",digit:state.digit,type,unit,cell:null,reasons:[],inspected:state.inspected.map(x=>({...x,reasons:x.reasons.slice()})),candidates:options,placement:null,message:"Finished "+label+" for "+state.digit+". "+options.length+" legal locations remain, so this unit does not force a placement."};advanceUnit();}
+    saveState();return true;
   }
   function stop() {
     if(timer) clearInterval(timer);
@@ -99,7 +102,7 @@
   function render() {
     const s=state.event,grid=state.grid;
     boardEl.innerHTML="";
-    const focusSet=new Set((s.candidates||[]).map(([r,c])=>r*9+c)),related=new Set();
+    const focusSet=new Set((s.candidates||[]).map(([r,c])=>r*9+c)),related=new Set(),inspected=new Map((s.inspected||[]).map(x=>[x.r*9+x.c,x]));
     if(s.type&&s.unit!==null) for(const [r,c] of cellsFor(s.type,s.unit)) related.add(r*9+c);
     for(let r=0;r<9;r++) for(let c=0;c<9;c++) {
       const idx=r*9+c,cell=document.createElement("button");
@@ -107,7 +110,9 @@
       cell.setAttribute("aria-label",`Row ${r+1}, column ${c+1}, ${grid[r][c]||"empty"}`);
       if(given[r][c])cell.classList.add("given");else if(grid[r][c])cell.classList.add("solved");
       if(related.has(idx))cell.classList.add("related");
+      if(inspected.has(idx))cell.classList.add(inspected.get(idx).legal?"inspected-legal":"inspected-eliminated");
       if(focusSet.has(idx))cell.classList.add("candidate");
+      if(s.cell&&s.cell[0]===r&&s.cell[1]===c)cell.classList.add("current-cell");
       if(s.placement&&s.placement[0]===r&&s.placement[1]===c)cell.classList.add("focus");
       if(selectedCell&&selectedCell[0]===r&&selectedCell[1]===c)cell.classList.add("selected");
       if(grid[r][c]) cell.innerHTML='<span class="cell-value">'+grid[r][c]+'</span>';
@@ -125,6 +130,11 @@
     $("scanUnit").textContent=s.type?unitName(s.type,s.unit):({complete:"All 81 cells filled",stuck:"No forced placement",contradiction:"Invalid completion path",intro:"Waiting for first scan"})[s.kind]||"";
     $("stepCount").textContent=`Processed events: ${stepIndex}`;
     $("reasoning").textContent=s.message;
+    const details=$("reasoningDetails");details.innerHTML="";
+    if(s.cell){const h=document.createElement("strong");h.textContent="Cell: row "+(s.cell[0]+1)+", column "+(s.cell[1]+1);details.appendChild(h);}
+    if(s.reasons&&s.reasons.length){const ul=document.createElement("ul");s.reasons.forEach(reason=>{const li=document.createElement("li");li.textContent=reason;ul.appendChild(li);});details.appendChild(ul);}
+    else if(s.kind==="inspect"){const p=document.createElement("p");p.textContent="No row, column, or box contains this digit, so this cell remains a legal possibility.";details.appendChild(p);}
+    if(s.inspected&&s.inspected.length){const p=document.createElement("p");p.textContent="Inspected "+s.inspected.length+" of 9 cells in this unit. "+s.candidates.length+" remain legal.";details.appendChild(p);}
     $("placements").textContent=state.placements;
     $("scans").textContent=state.scans;
     $("filled").textContent=state.filled;
