@@ -77,11 +77,11 @@
     if(missing.length)finish("contradiction","Contradiction detected: digit(s) "+missing.join(", ")+" still need placement(s), but no empty cell can legally contain them.");
     else finish("stuck","A complete pass through digits 1–9 found no forced placement. This scan method is stuck, but the puzzle may still be solvable with another technique.");
   }
-  function advanceUnit(){
+  function advanceUnit(checkEnd=true){
     resetUnitTrace();state.unit++;
     if(state.unit===9){state.unit=0;state.typeIndex++;}
     if(state.typeIndex===3){state.typeIndex=0;state.digit++;}
-    if(state.digit===10)finishCycle();
+    if(state.digit===10&&checkEnd)finishCycle();
   }
   function contextForCell(r,c,type){
     const cells=new Set();
@@ -133,6 +133,7 @@
     const options=state.legalPositions.map(x=>x.slice());
     if(options.length===1){
       state.pendingPlacement={r:options[0][0],c:options[0][1],digit:state.digit};
+      advanceUnit(false);
       state.event={kind:"conclusion",digit:state.digit,type,unit,cell:null,reasons:[],inspected:state.inspected.map(x=>({...x,reasons:x.reasons.slice()})),candidates:options,contextCells:[],sourceCells:[],placement:options[0],message:"Conclusion: after checking all nine cells in "+label+", exactly one legal location remains: row "+(options[0][0]+1)+", column "+(options[0][1]+1)+". This is a hidden single. The placement comes next, then the existing digit scan continues."};
     }else{
       state.event={kind:"unit-result",digit:state.digit,type,unit,cell:null,reasons:[],inspected:state.inspected.map(x=>({...x,reasons:x.reasons.slice()})),candidates:options,contextCells:[],sourceCells:[],placement:null,message:"Finished "+label+" for "+state.digit+". "+options.length+" legal locations remain, so this unit does not force a placement."};
