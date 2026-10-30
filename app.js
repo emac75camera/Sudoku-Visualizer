@@ -46,7 +46,7 @@
     return true;
   }
   function initialState(grid) {
-    return {grid:clone(grid),digit:1,typeIndex:0,unit:0,cellIndex:0,inspected:[],legalPositions:[],liveCandidates:{},pendingPlacement:null,scans:0,placements:0,filled:countFilled(grid),status:"ready",event:{kind:"intro",digit:1,type:null,unit:null,candidates:[],inspected:[],cell:null,reasons:[],contextCells:[],sourceCells:[],placement:null,message:"Ready. The solver will inspect one cell at a time and explain each decision."}};
+    return {grid:clone(grid),digit:1,typeIndex:0,unit:0,cellIndex:0,inspected:[],legalPositions:[],liveCandidates:{},pendingPlacement:null,scans:0,placements:0,passPlacements:0,filled:countFilled(grid),status:"ready",event:{kind:"intro",digit:1,type:null,unit:null,candidates:[],inspected:[],cell:null,reasons:[],contextCells:[],sourceCells:[],placement:null,message:"Ready. The solver will inspect one cell at a time and explain each decision."}};
   }
   function saveState() { history=history.slice(0,stepIndex+1); history.push(cloneState(state)); stepIndex=history.length-1; }
   function finish(kind,message) {
@@ -105,13 +105,21 @@
     if(["complete","stuck","contradiction"].includes(state.status))return false;
     if(state.pendingPlacement){
       const {r,c,digit}=state.pendingPlacement;
-      state.grid[r][c]=digit;state.filled++;state.placements++;state.pendingPlacement=null;
+      state.grid[r][c]=digit;state.filled++;state.placements++;state.passPlacements++;state.pendingPlacement=null;
       for(let rr=0;rr<9;rr++)for(let cc=0;cc<9;cc++)if(rr===r||cc===c||boxIndex(rr,cc)===boxIndex(r,c))delete state.liveCandidates[rr+","+cc];
       state.event={kind:"place",digit,type:null,unit:null,cell:[r,c],reasons:[],inspected:[],candidates:[],contextCells:[],sourceCells:[],placement:[r,c],message:"Place "+digit+" at row "+(r+1)+", column "+(c+1)+". Continue the remaining units in this digit's current scan cycle; do not restart the cycle."};
       saveState();return true;
     }
     if(state.filled===81){finish("complete","Puzzle complete. The solver made "+state.placements+" placements after "+state.scans+" cell inspections.");saveState();return true;}
-    if(state.digit>9){finishCycle();saveState();return true;}
+    if(state.digit>9){
+      if(state.passPlacements>0){
+        const made=state.passPlacements;
+        state.digit=1;state.typeIndex=0;state.unit=0;state.cellIndex=0;state.inspected=[];state.legalPositions=[];state.passPlacements=0;
+        state.event={kind:"cycle-complete",digit:1,type:null,unit:null,cell:null,reasons:[],inspected:[],candidates:[],contextCells:[],sourceCells:[],placement:null,message:"Completed the full 1–9 scan cycle with "+made+" solver placement(s). Begin a new full cycle at digit 1 to find deductions made possible by those placements. No unit is repeated within the same cycle."};
+        saveState();return true;
+      }
+      finishCycle();saveState();return true;
+    }
     const type=TYPES[state.typeIndex],unit=state.unit,label=unitName(type,unit);
     if(cellsFor(type,unit).some(([r,c])=>state.grid[r][c]===state.digit)){
       state.event={kind:"unit-skip",digit:state.digit,type,unit,cell:null,reasons:[],inspected:[],candidates:[],contextCells:[],sourceCells:[],placement:null,message:"Skip "+label+" for "+state.digit+": this unit already contains "+state.digit+", so none of its cells need to be scanned."};
@@ -205,8 +213,8 @@
     $("progressPercent").textContent=Math.round(state.filled/81*100)+"%";
     const progressBar=document.querySelector(".board-progress");
     if(progressBar)progressBar.setAttribute("aria-valuenow",String(state.filled));
-    $("focusTitle").textContent=({intro:"Ready to scan",inspect:"Inspecting a cell",conclusion:"Deduction found","unit-result":"Unit checked","unit-skip":"Unit skipped","manual-edit":"Manual board edit",place:"Placement found",stuck:"Scan method stuck",contradiction:"Contradiction detected",complete:"Puzzle complete"})[s.kind]||"Scanning";
-    $("focusDescription").textContent=({intro:"Press Play or Step to inspect the first cell.",inspect:"Testing this cell against its row, column, and 3×3 box.",conclusion:"All nine cells were checked. Exactly one legal location remains.","unit-result":"The unit has been fully inspected.","unit-skip":"The active digit is already present in this unit.","manual-edit":"The board changed without resetting the scan cursor.",place:"A unique legal location was found and placed.",stuck:"No forced placement was found in a complete pass.",contradiction:"The current board contains a digit with no legal destination.",complete:"Every cell is filled."})[s.kind]||"";
+    $("focusTitle").textContent=({intro:"Ready to scan",inspect:"Inspecting a cell",conclusion:"Deduction found","unit-result":"Unit checked","unit-skip":"Unit skipped","manual-edit":"Manual board edit","cycle-complete":"Scan cycle complete",place:"Placement found",stuck:"Scan method stuck",contradiction:"Contradiction detected",complete:"Puzzle complete"})[s.kind]||"Scanning";
+    $("focusDescription").textContent=({intro:"Press Play or Step to inspect the first cell.",inspect:"Testing this cell against its row, column, and 3×3 box.",conclusion:"All nine cells were checked. Exactly one legal location remains.","unit-result":"The unit has been fully inspected.","unit-skip":"The active digit is already present in this unit.","manual-edit":"The board changed without resetting the scan cursor.","cycle-complete":"A full 1–9 cycle finished with progress. A new cycle begins only after the current cycle is complete.",place:"A unique legal location was found and placed.",stuck:"No forced placement was found in a complete pass.",contradiction:"The current board contains a digit with no legal destination.",complete:"Every cell is filled."})[s.kind]||"";
     $("scanUnit").textContent=s.type?unitName(s.type,s.unit):({complete:"All 81 cells filled",stuck:"No forced placement",contradiction:"Invalid completion path",intro:"Waiting for first scan"})[s.kind]||"";
     $("stepCount").textContent=`Processed events: ${stepIndex}`;
     $("reasoning").textContent=s.message;
@@ -259,7 +267,7 @@
       });
       state.legalPositions=state.inspected.filter(item=>item.legal).map(item=>[item.r,item.c]);
     }
-    if(wasFinished){state.digit=1;state.typeIndex=0;state.unit=0;state.cellIndex=0;state.inspected=[];state.legalPositions=[];state.pendingPlacement=null;state.status="ready";}
+    if(wasFinished){state.digit=1;state.typeIndex=0;state.unit=0;state.cellIndex=0;state.inspected=[];state.legalPositions=[];state.pendingPlacement=null;state.passPlacements=0;state.status="ready";}
     for(let rr=0;rr<9;rr++)for(let cc=0;cc<9;cc++)if(rr===r||cc===c||boxIndex(rr,cc)===boxIndex(r,c))delete state.liveCandidates[rr+","+cc];
     state.event={kind:"manual-edit",digit:state.digit,type:null,unit:null,cell:[r,c],reasons:[],inspected:[],candidates:[],contextCells:[],sourceCells:[],placement:null,message:"Manual edit: "+(value?"entered "+value:"cleared")+" at row "+(r+1)+", column "+(c+1)+". The board and candidate cache were updated without resetting the active scan position."+(wasFinished?" The previous scan had stopped, so a fresh digit cycle is starting from 1.":"")};
     saveState();render();
