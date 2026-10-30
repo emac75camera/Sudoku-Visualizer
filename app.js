@@ -77,11 +77,11 @@
     if(missing.length)finish("contradiction","Contradiction detected: digit(s) "+missing.join(", ")+" still need placement(s), but no empty cell can legally contain them.");
     else finish("stuck","A complete pass through digits 1–9 found no forced placement. This scan method is stuck, but the puzzle may still be solvable with another technique.");
   }
-  function advanceUnit(checkEnd=true){
+  function advanceUnit(){
     resetUnitTrace();state.unit++;
     if(state.unit===9){state.unit=0;state.typeIndex++;}
     if(state.typeIndex===3){state.typeIndex=0;state.digit++;}
-    if(state.digit===10&&checkEnd)finishCycle();
+    
   }
   function contextForCell(r,c,type){
     const cells=new Set();
@@ -108,9 +108,9 @@
       state.grid[r][c]=digit;state.filled++;state.placements++;state.pendingPlacement=null;
       for(let rr=0;rr<9;rr++)for(let cc=0;cc<9;cc++)if(rr===r||cc===c||boxIndex(rr,cc)===boxIndex(r,c))delete state.liveCandidates[rr+","+cc];
       state.event={kind:"place",digit,type:null,unit:null,cell:[r,c],reasons:[],inspected:[],candidates:[],contextCells:[],sourceCells:[],placement:[r,c],message:"Place "+digit+" at row "+(r+1)+", column "+(c+1)+". Continue the remaining units in this digit's current scan cycle; do not restart the cycle."};
-      if(state.digit===10)finishCycle();
       saveState();return true;
     }
+    if(state.digit>9){finishCycle();saveState();return true;}
     if(state.filled===81){finish("complete","Puzzle complete. The solver made "+state.placements+" placements after "+state.scans+" cell inspections.");saveState();return true;}
     const type=TYPES[state.typeIndex],unit=state.unit,label=unitName(type,unit);
     if(state.cellIndex<9){
@@ -132,9 +132,10 @@
     }
     const options=state.legalPositions.map(x=>x.slice());
     if(options.length===1){
+      const currentDigit=state.digit;
       state.pendingPlacement={r:options[0][0],c:options[0][1],digit:state.digit};
-      advanceUnit(false);
-      state.event={kind:"conclusion",digit:state.digit,type,unit,cell:null,reasons:[],inspected:state.inspected.map(x=>({...x,reasons:x.reasons.slice()})),candidates:options,contextCells:[],sourceCells:[],placement:options[0],message:"Conclusion: after checking all nine cells in "+label+", exactly one legal location remains: row "+(options[0][0]+1)+", column "+(options[0][1]+1)+". This is a hidden single. The placement comes next, then the existing digit scan continues."};
+      advanceUnit();
+      state.event={kind:"conclusion",digit:currentDigit,type,unit,cell:null,reasons:[],inspected:state.inspected.map(x=>({...x,reasons:x.reasons.slice()})),candidates:options,contextCells:[],sourceCells:[],placement:options[0],message:"Conclusion: after checking all nine cells in "+label+", exactly one legal location remains: row "+(options[0][0]+1)+", column "+(options[0][1]+1)+". This is a hidden single. The placement comes next, then the existing digit scan continues."};
     }else{
       state.event={kind:"unit-result",digit:state.digit,type,unit,cell:null,reasons:[],inspected:state.inspected.map(x=>({...x,reasons:x.reasons.slice()})),candidates:options,contextCells:[],sourceCells:[],placement:null,message:"Finished "+label+" for "+state.digit+". "+options.length+" legal locations remain, so this unit does not force a placement."};
       advanceUnit();
