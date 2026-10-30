@@ -12,3 +12,10 @@
 .cell.current-cell{outline:3px solid var(--gold);outline-offset:-3px;z-index:2}
 .reasoning-details{margin-top:9px;padding:10px 12px;background:#172331;border:1px solid #2b394b;border-radius:9px;color:#b9c9da;font-size:11px;min-height:34px}
 .reasoning-details ul{margin:7px 0 0;padding-left:18px}.reasoning-details li{margin:3px 0}.reasoning-details p{margin:7px 0 0}
+
+/* v1.5 live reasoning highlights */
+.cell.current-cell{background:#28639a!important;color:#fff!important;outline:2px solid #8bc8ff;outline-offset:-2px;z-index:3}
+.cell.scan-context{background:#254a70!important;color:#dceeff}
+.cell.conflict-source{background:#244b3d!important;color:var(--green)!important;box-shadow:inset 0 0 0 2px #76d6ad}
+.cell.conflict-source .cell-value,.cell.current-cell .cell-value{color:var(--green)!important}
+.cell.current-cell.conflict-source{background:#28639a!important;outline-color:#8bc8ff}
