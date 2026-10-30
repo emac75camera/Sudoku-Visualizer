@@ -37,12 +37,12 @@
           <button id="resetBtn" class="button secondary">Reset puzzle</button>
         </div>
         <div class="input-tools">
-          <label class="toggle-label"><input id="candidateToggle" type="checkbox"> Show candidates <span class="muted-inline">(display only)</span></label>
+          <label class="toggle-label"><input id="candidateToggle" type="checkbox"> Show live candidates <span class="muted-inline">(updated as cells are scanned)</span></label>
           <label for="puzzleString" class="input-label">Import puzzle string</label>
           <textarea id="puzzleString" rows="2" placeholder="Paste 81 characters: use 0 or . for empty cells"></textarea>
           <div class="import-row"><button id="importBtn" class="button secondary">Import 81-cell puzzle</button><span id="importStatus" class="import-status" aria-live="polite">Enter a puzzle string to import.</span></div>
         </div>
-        <p class="helper">Select a cell and type 1–9. Use Backspace or Delete to erase. The example puzzle is preloaded. Candidate display never changes the solver's decisions.</p>
+        <p class="helper">Select a cell and type 1–9. Use Backspace or Delete to erase. The example puzzle is preloaded. Candidate numbers are calculated only when the scanner reaches a cell, then refreshed when a placement affects that cell.</p>
       </div>
 
       <aside class="side-column">
@@ -59,11 +59,11 @@
           <div class="panel-heading compact"><div><p class="eyebrow">PLAYBACK</p><h3>Solver controls</h3></div></div>
           <div class="main-controls">
             <button id="playBtn" class="button primary"><span id="playIcon">▶</span> <span id="playText">Play</span></button>
-            <button id="stepBtn" class="button secondary">Step →</button>
-            <button id="backBtn" class="button secondary" aria-label="Previous step">←</button>
+            <button id="backBtn" class="button secondary" aria-label="Previous step">← Previous</button>
+            <button id="stepBtn" class="button secondary">Next →</button>
           </div>
           <div class="speed-row"><label for="speed">Playback speed</label><strong id="speedValue">1×</strong></div>
-          <input id="speed" type="range" min="1" max="5" value="1">
+          <input id="speed" type="range" min="1" max="10" value="1">
           <div class="speed-labels"><span>Slow</span><span>Fast</span></div>
         </section>
 
