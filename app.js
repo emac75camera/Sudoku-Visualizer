@@ -124,7 +124,6 @@
     $("focusDescription").textContent=({intro:"Press Play or Step to begin live processing.",scan:"One unit was just checked. The next check has not been calculated yet.",place:"A unique legal location was found and placed.",stuck:"No forced placement was found in a complete pass.",contradiction:"The current board contains a digit with no legal destination.",complete:"Every cell is filled."})[s.kind]||"";
     $("scanUnit").textContent=s.type?unitName(s.type,s.unit):({complete:"All 81 cells filled",stuck:"No forced placement",contradiction:"Invalid completion path",intro:"Waiting for first scan"})[s.kind]||"";
     $("stepCount").textContent=`Processed events: ${stepIndex}`;
-    $("scanProgress").style.width="100%";
     $("reasoning").textContent=s.message;
     $("placements").textContent=state.placements;
     $("scans").textContent=state.scans;
