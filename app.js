@@ -162,18 +162,19 @@
       state.cellIndex++;
     }
     if(state.cellIndex<9){
-      const [r,c]=unitCells[state.cellIndex],result=explainCell(state.grid,r,c,state.digit);
+      const [r,c]=unitCells[state.cellIndex];
+      // Defensive invariant: occupied cells are never inspected or emitted as events.
+      if(state.grid[r][c]!==0){state.cellIndex++;return advance();}
+      const result=explainCell(state.grid,r,c,state.digit);
       const key=r+","+c;
       updateLiveCandidate(state.grid,r,c,state.digit);
       const item={r,c,legal:result.legal,reasons:result.reasons};
       state.inspected.push(item);if(result.legal)state.legalPositions.push([r,c]);
       state.cellIndex++;state.scans++;
-      const occupied=state.grid[r][c]!==0;
       const sources=sourceCellsFor(state.grid,r,c,state.digit,result.reasons);
       const context=result.legal?contextForCell(r,c,type):[];
       let message;
-      if(occupied)message="Cell row "+(r+1)+", column "+(c+1)+" is occupied by "+state.grid[r][c]+". Record the existing number and continue.";
-      else if(result.legal)message="Row "+(r+1)+", column "+(c+1)+" remains a legal location for "+state.digit+". Check its intersecting row, column, and box.";
+      if(result.legal)message="Row "+(r+1)+", column "+(c+1)+" remains a legal location for "+state.digit+". Check its intersecting row, column, and box.";
       else message="Eliminate row "+(r+1)+", column "+(c+1)+" for "+state.digit+": "+result.reasons.join(" ");
       state.event={kind:"inspect",digit:state.digit,type,unit,cell:[r,c],legal:result.legal,reasons:result.reasons,inspected:state.inspected.map(x=>({...x,reasons:x.reasons.slice()})),candidates:state.legalPositions.map(x=>x.slice()),contextCells:context,sourceCells:sources,placement:null,message};
       saveState();return true;
