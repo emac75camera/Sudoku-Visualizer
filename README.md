@@ -1,6 +1,6 @@
 # Sudoku Visualizer
 
-**Version 1.6** is a dependency-free browser app for watching a Sudoku strategy calculate its next scan in real time. It is designed around a particular sequential scanning method rather than a conventional all-purpose Sudoku solver.
+**Version 1.6.1** is a dependency-free browser app for watching a Sudoku strategy calculate its next scan in real time. It is designed around a particular sequential scanning method rather than a conventional all-purpose Sudoku solver.
 
 ## Run it as a website
 
@@ -16,12 +16,12 @@ To publish it with GitHub Pages:
 
 You can also open `index.html` directly in a modern browser.
 
-## Version 1.6 features
+## Version 1.6.1 features
 
 - Interactive 9×9 Sudoku board with manual cell entry.
 - Import a puzzle by pasting an 81-character string. Use digits 1–9 for filled cells and `0` or `.` for blanks. Whitespace, commas, semicolons, and vertical bars are ignored.
 - Basic input validation rejects duplicate digits in a row, column, or 3×3 box.
-- Optional live candidate overlay calculates candidate digits only when the scanner reaches each cell. Candidate lists are refreshed when a placement changes that cell's row, column, or box.
+- Optional live candidate overlay updates only the digit currently being scanned in each inspected cell. Previously recorded digits remain until a placement or manual edit invalidates affected cells.
 - Live scan processing: the next cell is examined only when the user presses Next or the playback timer advances.
 - The active digit completes its current rows → columns → boxes cycle after a placement. The solver does not restart that digit's cycle or repeat units already checked. After digit 9, it starts another complete 1–9 pass only if the previous full pass made progress.
 - The current cell is highlighted blue; the row/column/box being cross-referenced is highlighted blue, and existing matching digits that eliminate a candidate are highlighted green.
@@ -89,7 +89,7 @@ The app currently does not run a separate complete solver to prove solvability o
 - Click an editable cell and type 1–9 to enter a number. Backspace/Delete clears it. Conflicting entries are rejected. Manual edits preserve the active scan position; edits after a stuck/contradiction restart scanning from digit 1.
 - **Show live candidates**: toggle candidate digits on cells as the scanner reaches them. Unvisited cells do not receive precomputed candidates.
 - **Show cell-by-cell scan animation**: switch between individual cell inspections and faster whole-unit summaries.
-- **Highlight colors**: independently disable blue, red, or green visual highlights.
+- **Highlight colors**: independently disable blue, red, or green visual highlights. Disabled highlights return cells to their normal board color.
 - Units already containing the active digit are skipped without cell-by-cell inspection.
 - **Import 81-cell puzzle**: paste a compact puzzle string and import it after duplicate validation.
 
@@ -198,6 +198,13 @@ Candidate marks are calculated on cell inspection and stored in the event state.
 - Units that already contain the active digit are skipped without inspecting their nine cells.
 - Box labels use box-row and box-column coordinates from 1–3 (for example, box 3-3 is the bottom-right box).
 - The cell-by-cell scan animation can be disabled. In that mode, each eligible unit is evaluated in one event and the reasoning summarizes how many possible locations remain. The underlying hidden-single scan rules remain the same.
-- The current-focus panel displays filled cells out of 81 with a progress bar.
+- The current-focus panel displays filled cells out of 81 with a progress bar and a digit tracker showing each digit's count out of nine. A digit is marked complete only when all nine copies are on the board.
 - Blue, red, and green highlight colors can be individually disabled without changing solver behavior. Red and green elimination/source highlights take precedence over blue scanning context.
 - Manual input is validated against the current board. Original clues remain locked; user-entered cells remain editable.
+
+## Version 1.6.1 refinements
+
+- Candidate updates are digit-specific. When the scanner examines a cell for the active digit, it adds or removes only that digit from the cell's live candidate display. Candidate marks for other digits are not recalculated at that moment. Placement and manual-edit invalidation still clear affected cells so they can be refreshed as the scanner reaches them again.
+- The scanner performs a targeted presence check only for the current 3×3 box. If that box already contains the active digit, it skips the box without inspecting its nine cells. It does not perform this whole-unit precheck for rows or columns.
+- Turning off blue, red, or green highlights returns affected cells to the normal board background instead of making them transparent or black. Higher-priority active highlights remain visible when another color is disabled.
+- The digit completion tracker displays counts from 0/9 to 9/9. A digit is marked complete only at 9/9. This tracker is a display-only summary of the board and does not influence solver decisions.
