@@ -133,13 +133,17 @@
     if(!showScanAnimation){
       const trace=state.inspected.map(x=>({...x,reasons:x.reasons.slice()}));
       const unitCells=cellsFor(type,unit);
+      let checked=0;
       for(let i=state.cellIndex;i<9;i++){
-        const [r,c]=unitCells[i],result=explainCell(state.grid,r,c,state.digit);
+        const [r,c]=unitCells[i];
+        if(state.grid[r][c]!==0)continue;
+        const result=explainCell(state.grid,r,c,state.digit);
         trace.push({r,c,legal:result.legal,reasons:result.reasons});
         updateLiveCandidate(state.grid,r,c,state.digit);
+        checked++;
       }
       const options=trace.filter(x=>x.legal).map(x=>[x.r,x.c]);
-      state.scans+=9-state.cellIndex;
+      state.scans+=checked;
       if(options.length===1){
         const currentDigit=state.digit;
         state.pendingPlacement={r:options[0][0],c:options[0][1],digit:state.digit,typeIndex:state.typeIndex,unit:state.unit};
@@ -151,8 +155,14 @@
       }
       saveState();return true;
     }
+    const unitCells=cellsFor(type,unit);
+    while(state.cellIndex<9){
+      const [skipR,skipC]=unitCells[state.cellIndex];
+      if(state.grid[skipR][skipC]===0)break;
+      state.cellIndex++;
+    }
     if(state.cellIndex<9){
-      const [r,c]=cellsFor(type,unit)[state.cellIndex],result=explainCell(state.grid,r,c,state.digit);
+      const [r,c]=unitCells[state.cellIndex],result=explainCell(state.grid,r,c,state.digit);
       const key=r+","+c;
       updateLiveCandidate(state.grid,r,c,state.digit);
       const item={r,c,legal:result.legal,reasons:result.reasons};
