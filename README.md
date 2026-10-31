@@ -1,6 +1,6 @@
 # Sudoku Visualizer
 
-**Version 1.6.1** is a dependency-free browser app for watching a Sudoku strategy calculate its next scan in real time. It is designed around a particular sequential scanning method rather than a conventional all-purpose Sudoku solver.
+**Sudoku Visualizer** is a dependency-free browser app for watching a Sudoku strategy calculate its next scan in real time. It is designed around a particular sequential scanning method rather than a conventional all-purpose Sudoku solver.
 
 ## Run it as a website
 
