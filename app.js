@@ -198,8 +198,9 @@
   function render() {
     const s=state.event,grid=state.grid;
     boardEl.innerHTML="";
-    const focusSet=new Set((s.candidates||[]).map(([r,c])=>r*9+c)),related=new Set(),inspected=new Map((s.inspected||[]).map(x=>[x.r*9+x.c,x])),contextSet=new Set((s.contextCells||[]).map(([r,c])=>r*9+c)),sourceSet=new Set((s.sourceCells||[]).map(([r,c])=>r*9+c));
-    if(s.type&&s.unit!==null) for(const [r,c] of cellsFor(s.type,s.unit)) related.add(r*9+c);
+    const isEmpty=([r,c])=>grid[r][c]===0;
+    const focusSet=new Set((s.candidates||[]).filter(isEmpty).map(([r,c])=>r*9+c)),related=new Set(),inspected=new Map((s.inspected||[]).filter(x=>grid[x.r][x.c]===0).map(x=>[x.r*9+x.c,x])),contextSet=new Set((s.contextCells||[]).filter(isEmpty).map(([r,c])=>r*9+c)),sourceSet=new Set((s.sourceCells||[]).filter(isEmpty).map(([r,c])=>r*9+c));
+    if(s.type&&s.unit!==null) for(const [r,c] of cellsFor(s.type,s.unit)) if(grid[r][c]===0) related.add(r*9+c);
     for(let r=0;r<9;r++) for(let c=0;c<9;c++) {
       const idx=r*9+c,cell=document.createElement("button");
       cell.type="button";cell.className="cell";cell.setAttribute("role","gridcell");
@@ -209,7 +210,7 @@
       if(inspected.has(idx))cell.classList.add(inspected.get(idx).legal?"inspected-legal":"inspected-eliminated");
       if(showScanAnimation&&contextSet.has(idx))cell.classList.add("scan-context");
       if(focusSet.has(idx))cell.classList.add("candidate");
-      if(showScanAnimation&&s.cell&&s.cell[0]===r&&s.cell[1]===c)cell.classList.add("current-cell");
+      if(showScanAnimation&&s.cell&&s.cell[0]===r&&s.cell[1]===c&&grid[r][c]===0)cell.classList.add("current-cell");
       if(sourceSet.has(idx))cell.classList.add("conflict-source");
       if(s.placement&&s.placement[0]===r&&s.placement[1]===c)cell.classList.add("focus");
       if(selectedCell&&selectedCell[0]===r&&selectedCell[1]===c)cell.classList.add("selected");
