@@ -36,7 +36,12 @@
     for(let rr=br;rr<br+3;rr++) for(let cc=bc;cc<bc+3;cc++) if(grid[rr][cc]===digit) return false;
     return true;
   }
-  function candidatesFor(grid,r,c) { return [1,2,3,4,5,6,7,8,9].filter(n=>legal(grid,r,c,n)); }
+  function updateLiveCandidate(grid,r,c,digit) {
+    const key=r+","+c,existing=state.liveCandidates[key]||[];
+    const next=existing.filter(n=>n!==digit);
+    if(grid[r][c]===0&&legal(grid,r,c,digit))next.push(digit);
+    state.liveCandidates[key]=next.sort((a,b)=>a-b);
+  }
   function validPuzzle(grid) {
     for(let r=0;r<9;r++) for(let c=0;c<9;c++) if(grid[r][c]) {
       const n=grid[r][c]; grid[r][c]=0;
@@ -121,7 +126,7 @@
       finishCycle();saveState();return true;
     }
     const type=TYPES[state.typeIndex],unit=state.unit,label=unitName(type,unit);
-    if(cellsFor(type,unit).some(([r,c])=>state.grid[r][c]===state.digit)){
+    if(type==="box"&&cellsFor("box",unit).some(([r,c])=>state.grid[r][c]===state.digit)){
       state.event={kind:"unit-skip",digit:state.digit,type,unit,cell:null,reasons:[],inspected:[],candidates:[],contextCells:[],sourceCells:[],placement:null,message:"Skip "+label+" for "+state.digit+": this unit already contains "+state.digit+", so none of its cells need to be scanned."};
       advanceUnit();saveState();return true;
     }
@@ -131,7 +136,7 @@
       for(let i=state.cellIndex;i<9;i++){
         const [r,c]=unitCells[i],result=explainCell(state.grid,r,c,state.digit);
         trace.push({r,c,legal:result.legal,reasons:result.reasons});
-        state.liveCandidates[r+","+c]=state.grid[r][c]===0?candidatesFor(state.grid,r,c):[];
+        updateLiveCandidate(state.grid,r,c,state.digit);
       }
       const options=trace.filter(x=>x.legal).map(x=>[x.r,x.c]);
       state.scans+=9-state.cellIndex;
@@ -149,7 +154,7 @@
     if(state.cellIndex<9){
       const [r,c]=cellsFor(type,unit)[state.cellIndex],result=explainCell(state.grid,r,c,state.digit);
       const key=r+","+c;
-      state.liveCandidates[key]=state.grid[r][c]===0?candidatesFor(state.grid,r,c):[];
+      updateLiveCandidate(state.grid,r,c,state.digit);
       const item={r,c,legal:result.legal,reasons:result.reasons};
       state.inspected.push(item);if(result.legal)state.legalPositions.push([r,c]);
       state.cellIndex++;state.scans++;
@@ -208,6 +213,13 @@
       boardEl.appendChild(cell);
     }
     $("focusNumber").textContent=showScanAnimation?(s.digit||"—"):"—";
+    const digitCounts=Array.from({length:9},(_,i)=>grid.flat().filter(value=>value===i+1).length);
+    for(let digit=1;digit<=9;digit++){
+      const count=digitCounts[digit-1],item=$("digitStatus"+digit);
+      item.textContent=digit+" · "+count+"/9";
+      item.classList.toggle("digit-complete",count===9);
+      item.setAttribute("aria-label","Digit "+digit+": "+count+" of 9 placed"+(count===9?", complete":""));
+    }
     $("progressText").textContent=state.filled+" / 81";
     $("progressFill").style.width=(state.filled/81*100)+"%";
     $("progressPercent").textContent=Math.round(state.filled/81*100)+"%";
