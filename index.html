@@ -12,7 +12,7 @@
     <header class="topbar">
       <div class="brand-mark" aria-hidden="true">▦</div>
       <div><p class="eyebrow">ALGORITHM PLAYGROUND</p><h1>Sudoku Visualizer</h1></div>
-      <span class="version">RELEASE · v1.6</span>
+      <span class="version">RELEASE · v1.6.1</span>
     </header>
 
     <section class="intro">
@@ -53,6 +53,20 @@
           <div class="focus-number" id="focusNumber">1</div>
           <h3 id="focusTitle">Ready to scan</h3>
           <p id="focusDescription" class="muted">Press Play or Step to begin checking where this digit can go.</p>
+          <div class="digit-tracker" aria-label="Digit completion tracker">
+            <div class="digit-tracker-heading"><strong>Digit completion</strong><span>Complete when all 9 are placed</span></div>
+            <div class="digit-tracker-grid">
+              <span id="digitStatus1" class="digit-status" aria-label="Digit 1: 0 of 9 placed">1 · 0/9</span>
+              <span id="digitStatus2" class="digit-status" aria-label="Digit 2: 0 of 9 placed">2 · 0/9</span>
+              <span id="digitStatus3" class="digit-status" aria-label="Digit 3: 0 of 9 placed">3 · 0/9</span>
+              <span id="digitStatus4" class="digit-status" aria-label="Digit 4: 0 of 9 placed">4 · 0/9</span>
+              <span id="digitStatus5" class="digit-status" aria-label="Digit 5: 0 of 9 placed">5 · 0/9</span>
+              <span id="digitStatus6" class="digit-status" aria-label="Digit 6: 0 of 9 placed">6 · 0/9</span>
+              <span id="digitStatus7" class="digit-status" aria-label="Digit 7: 0 of 9 placed">7 · 0/9</span>
+              <span id="digitStatus8" class="digit-status" aria-label="Digit 8: 0 of 9 placed">8 · 0/9</span>
+              <span id="digitStatus9" class="digit-status" aria-label="Digit 9: 0 of 9 placed">9 · 0/9</span>
+            </div>
+          </div>
           <div class="progress-heading"><strong>Board progress</strong><strong id="progressText">30 / 81</strong></div>
           <div class="board-progress" role="progressbar" aria-label="Filled Sudoku cells" aria-valuemin="0" aria-valuemax="81" aria-valuenow="30"><div id="progressFill" class="board-progress-fill"></div></div>
           <div class="scan-meta"><span id="progressPercent">37%</span><span id="scanUnit">Waiting for first scan</span></div>
