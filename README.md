@@ -166,7 +166,7 @@ Recommended engineering steps:
 - Test that every Step advances exactly one unit check or one placement event.
 - Test that no future scans are calculated before the user advances.
 - Test that Previous restores the exact board, digit, unit type, and unit number.
-- Test that a placement resets the scan cursor to digit 1, row 1.
+- Test that a placement continues the current scan without resetting the cursor.
 - Test the verifier separately from the visible scan solver.
 - Consider moving solver logic into a standalone module so it can be tested without a browser UI.
 
